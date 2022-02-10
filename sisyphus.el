@@ -27,6 +27,9 @@
 
 ;; Create a release and watch it role down the hill again.
 
+;; Recommended setup:
+;;   (with-eval-after-load 'magit (require 'sisyphus))
+
 ;;; Code:
 
 (require 'magit-tag)
@@ -43,6 +46,7 @@
 
 ;;; Commands
 
+;;;###autoload
 (defun sisyphus-create-release (version)
   "Create a release commit, bumping version strings."
   (interactive
@@ -58,6 +62,7 @@
     (sisyphus--commit (format "Release version %s" version))
     (magit-show-commit "HEAD")))
 
+;;;###autoload
 (defun sisyphus-bump-post-release ()
   "Create a post-release commit, bumping version strings."
   (interactive)
