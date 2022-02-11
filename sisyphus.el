@@ -132,6 +132,19 @@
         (re-search-forward "^(define-package \"[^\"]+\" \"\\([^\"]+\\)\"$")
         (replace-match version t t nil 1)))))
 
+(defun sisyphus--check-changelog (_name version)
+  (let ((file (expand-file-name "CHANGELOG")))
+    (when (file-exists-p file)
+      (sisyphus--with-file file
+        (cond
+         ((not (re-search-forward
+                (format-time-string
+                 (format "^\\* v%s    \\(%%F$\\)?" version))
+                nil t))
+          (user-error "CHANGELOG entry missing"))
+         ((not (match-end 1))
+          (user-error "CHANGELOG entry unfinished")))))))
+
 (defun sisyphus--commit (msg)
   (magit-run-git
    "commit" "-a" "-m" msg
