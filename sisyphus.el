@@ -76,38 +76,43 @@
     (sisyphus--commit "Resume development")
     (magit-show-commit "HEAD")))
 
+;;; Macros
+
+(defmacro sisyphus--with-file (file &rest body)
+  (declare (indent 1))
+  (let ((file* (gensym "file"))
+        (open* (gensym "open")))
+    `(let* ((,file* ,file)
+            (,open* (find-buffer-visiting ,file*)))
+       (with-current-buffer (find-file-noselect ,file*)
+         (save-excursion
+           (goto-char (point-min))
+           ,@body)
+         (save-buffer)
+         (unless ,open*
+           (kill-buffer (current-buffer)))))))
+
 ;;; Functions
 
 (defun sisyphus--edit-library (name version)
   (let ((file (expand-file-name (format "%s.el" name))))
     (unless (file-exists-p file)
       (setq file (expand-file-name (format "lisp/%s.el" name))))
-    (let ((open (find-buffer-visiting file)))
-      (if (file-exists-p file)
-          (with-current-buffer (find-file-noselect file)
-            (save-excursion
-              (goto-char (point-min))
-              (when (re-search-forward "^;; Package-Version: \\(.+\\)$" nil t)
-                (replace-match version t t nil 1)
-                (save-buffer)))
-            (unless open
-              (kill-buffer (current-buffer))))
-	(error "Library %s.el not found" name)))))
+    (if (file-exists-p file)
+        (sisyphus--with-file file
+          (when (re-search-forward "^;; Package-Version: \\(.+\\)$" nil t)
+            (replace-match version t t nil 1)
+            (save-buffer)))
+      (error "Library %s.el not found" name))))
 
 (defun sisyphus--edit-manual (name version)
-  (let* ((file (expand-file-name (format "docs/%s.org" name)))
-         (open (find-buffer-visiting file)))
+  (let ((file (expand-file-name (format "docs/%s.org" name))))
     (when (file-exists-p file)
-      (with-current-buffer (find-file-noselect file)
-        (save-excursion
-          (goto-char (point-min))
-          (re-search-forward "^#\\+subtitle: for version \\(.+\\)$")
-          (replace-match version t t nil 1)
-          (re-search-forward "^This manual is for [^ ]+ version \\(.+\\)\\.$")
-          (replace-match version t t nil 1))
-        (save-buffer)
-        (unless open
-          (kill-buffer (current-buffer))))
+      (sisyphus--with-file file
+        (re-search-forward "^#\\+subtitle: for version \\(.+\\)$")
+        (replace-match version t t nil 1)
+        (re-search-forward "^This manual is for [^ ]+ version \\(.+\\)\\.$")
+        (replace-match version t t nil 1))
       (magit-call-process "make" "texi"))))
 
 (defun sisyphus--edit-magit (version)
@@ -121,17 +126,11 @@
   (sisyphus--edit-manual "magit-section" version))
 
 (defun sisyphus--edit-pkg (name version)
-  (let* ((file (expand-file-name (format "lisp/%s-pkg.el" name)))
-         (open (find-buffer-visiting file)))
+  (let ((file (expand-file-name (format "lisp/%s-pkg.el" name))))
     (when (file-exists-p file)
-      (with-current-buffer (find-file-noselect file)
-        (save-excursion
-          (goto-char (point-min))
-          (re-search-forward "^(define-package \"[^\"]+\" \"\\([^\"]+\\)\"$")
-          (replace-match version t t nil 1))
-        (save-buffer)
-        (unless open
-          (kill-buffer (current-buffer)))))))
+      (sisyphus--with-file file
+        (re-search-forward "^(define-package \"[^\"]+\" \"\\([^\"]+\\)\"$")
+        (replace-match version t t nil 1)))))
 
 (defun sisyphus--commit (msg)
   (magit-run-git
