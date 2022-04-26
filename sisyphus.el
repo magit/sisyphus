@@ -7,7 +7,7 @@
 ;; Keywords: git tools vc
 
 ;; Package-Version: 0.0.0-git
-;; Package-Requires: ((emacs "27") (magit "3.4.0"))
+;; Package-Requires: ((emacs "27") (compat "28.1.1.0") (magit "3.4.0"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -32,6 +32,8 @@
 ;;   (with-eval-after-load 'magit (require 'sisyphus))
 
 ;;; Code:
+
+(require 'compat)
 
 (require 'magit-tag)
 
