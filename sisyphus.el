@@ -58,7 +58,7 @@
                         prev))))
   (let ((prev (caar (magit--list-releases))))
     (cond ((equal version prev)
-           (user-error "Version must changed: %s -> %s" prev version))
+           (user-error "Version must change: %s -> %s" prev version))
           ((version< version prev)
            (user-error "Version must increase: %s -> %s" prev version))))
   (magit-with-toplevel
