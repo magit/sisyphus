@@ -1,4 +1,4 @@
-;;; sisyphus.el --- Create Elisp releases -*- lexical-binding:t -*-
+;;; sisyphus.el --- Create releases of Emacs packages  -*- lexical-binding:t -*-
 
 ;; Copyright (C) 2022 Jonas Bernoulli
 

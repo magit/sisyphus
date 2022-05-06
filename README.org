@@ -1,3 +1,35 @@
-* Create Elisp releases
+* Create releases of Emacs packages
 
 Create a release and watch it roll down the hill again.
+
+This package is fairly opinionated, but not all of those opinions
+are mine.
+
+That is, I don't think it is a good idea to put version strings in
+Elisp libraries, but because some of my packages are distributed on
+[Non]GNU Elpa, I have to do that anyway.  In fact, I created this
+package to reduce my annoyance at that requirment.
+
+When creating a release the hope always is that one wouldn't have to
+make any changes for a while, but when version strings are embedded
+in libraries, then that is impossible because one has to change that
+string from ~VERSION~ to ~VERSION-git~ after a release, else all commits
+until the next release would self-identify as ~VERSION~.
+
+Also, in my experience, minor defects have a tendency to be reported
+right after a release, not in the months leading up to it, during
+which there was little or no activity.  Thus the name of this package.
+
+*Typical workflow*
+
+- Update release notes.
+- Create a release commit using ~t c~ (~sisyphus-create-release~).
+- Create a release tag using ~t r~ (~magit-tag-release~).
+- Create post release commit using ~t g~ (~sisyphus-bump-post-release~).
+
+*Recommended setup*
+
+#+begin_src emacs-lisp
+  (with-eval-after-load 'magit (require 'sisyphus))
+#+end_src
+
