@@ -54,9 +54,11 @@
   "Create a release commit, bumping version strings."
   (interactive
    (let ((prev (caar (magit--list-releases))))
-     (list (read-string (format "Create release (previous was %s): " prev)
+     (list (read-string (if prev
+                            (format "Create release (previous was %s): " prev)
+                          "Create first release: ")
                         prev))))
-  (let ((prev (caar (magit--list-releases))))
+  (when-let ((prev (caar (magit--list-releases))))
     (cond ((equal version prev)
            (user-error "Version must change: %s -> %s" prev version))
           ((version< version prev)
