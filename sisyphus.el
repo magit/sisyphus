@@ -67,9 +67,7 @@
     (let ((name (sisyphus--package-name)))
       (sisyphus--check-changelog name version)
       (sisyphus--edit-library name version)
-      (sisyphus--edit-manual name version)
-      (when (equal name "magit")
-        (sisyphus--edit-magit version)))
+      (sisyphus--edit-manual name version))
     (sisyphus--commit (format "Release version %s" version))
     (magit-show-commit "HEAD")))
 
@@ -81,9 +79,7 @@
     (let ((name (sisyphus--package-name))
           (version (concat (caar (magit--list-releases)) "-git")))
       (sisyphus--edit-library name version)
-      (sisyphus--edit-manual name version)
-      (when (equal name "magit")
-        (sisyphus--edit-magit version)))
+      (sisyphus--edit-manual name version))
     (sisyphus--commit "Resume development")
     (magit-show-commit "HEAD")))
 
@@ -105,6 +101,13 @@
 
 ;;; Functions
 
+(defun sisyphus--edit-package (name version)
+  (let ((file (expand-file-name (format "lisp/%s-pkg.el" name))))
+    (when (file-exists-p file)
+      (sisyphus--with-file file
+        (re-search-forward "^(define-package \"[^\"]+\" \"\\([^\"]+\\)\"$")
+        (replace-match version t t nil 1)))))
+
 (defun sisyphus--edit-library (name version)
   (let ((file (expand-file-name (format "%s.el" name))))
     (unless (file-exists-p file)
@@ -125,23 +128,6 @@
         (re-search-forward "^This manual is for [^ ]+ version \\(.+\\)\\.$")
         (replace-match version t t nil 1))
       (magit-call-process "make" "texi"))))
-
-(defun sisyphus--edit-magit (version)
-  (sisyphus--edit-pkg "git-commit" version)
-  (sisyphus--edit-pkg "magit" version)
-  (sisyphus--edit-pkg "magit-libgit" version)
-  (sisyphus--edit-pkg "magit-section" version)
-  (sisyphus--edit-library "git-commit" version)
-  (sisyphus--edit-library "magit-libgit" version)
-  (sisyphus--edit-library "magit-section" version)
-  (sisyphus--edit-manual "magit-section" version))
-
-(defun sisyphus--edit-pkg (name version)
-  (let ((file (expand-file-name (format "lisp/%s-pkg.el" name))))
-    (when (file-exists-p file)
-      (sisyphus--with-file file
-        (re-search-forward "^(define-package \"[^\"]+\" \"\\([^\"]+\\)\"$")
-        (replace-match version t t nil 1)))))
 
 (defun sisyphus--check-changelog (_name version)
   (let ((file (expand-file-name "CHANGELOG")))
