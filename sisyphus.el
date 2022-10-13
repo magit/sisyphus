@@ -7,7 +7,12 @@
 ;; Keywords: git tools vc
 
 ;; Package-Version: 0.1.0-git
-;; Package-Requires: ((emacs "27") (compat "28.1.1.0") (magit "3.4.0"))
+;; Package-Requires: (
+;;     (emacs "27")
+;;     (compat "28.1.1.0")
+;;     (elx "1.6.0")
+;;     (llama "0.3.0")
+;;     (magit "3.4.0"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -34,7 +39,9 @@
 ;;; Code:
 
 (require 'compat)
+(require 'llama)
 
+(require 'elx)
 (require 'magit-tag)
 
 ;;; Key Bindings
@@ -64,9 +71,8 @@
           ((version< version prev)
            (user-error "Version must increase: %s -> %s" prev version))))
   (magit-with-toplevel
-    (let ((name (sisyphus--package-name)))
-      (sisyphus--check-changelog name version)
-      (sisyphus--bump-versions name version))
+    (sisyphus--check-changelog version)
+    (sisyphus--bump-version version)
     (sisyphus--commit (format "Release version %s" version))
     (magit-show-commit "HEAD")))
 
@@ -75,9 +81,7 @@
   "Create a post-release commit, bumping version strings."
   (interactive)
   (magit-with-toplevel
-    (let ((name (sisyphus--package-name))
-          (version (concat (sisyphus--previous-version) "-git")))
-      (sisyphus--bump-versions name version))
+    (sisyphus--bump-version (concat (sisyphus--previous-version) "-git"))
     (sisyphus--commit "Resume development")
     (magit-show-commit "HEAD")))
 
@@ -105,7 +109,7 @@
 (defun sisyphus--previous-version ()
   (caar (magit--list-releases)))
 
-(defun sisyphus--check-changelog (_name version)
+(defun sisyphus--check-changelog (version)
   (let ((file (expand-file-name "CHANGELOG")))
     (when (file-exists-p file)
       (sisyphus--with-file file
@@ -118,37 +122,74 @@
          ((not (match-end 1))
           (user-error "CHANGELOG entry unfinished")))))))
 
-(defun sisyphus--bump-versions (name version)
-  (sisyphus--edit-library name version)
-  (sisyphus--edit-manual name version))
+(defun sisyphus--bump-version (version)
+  (let* ((lisp (if (file-directory-p "lisp") "lisp" "."))
+         (docs (if (file-directory-p "docs") "docs" "."))
+         (pkgs (nconc (directory-files lisp t "-pkg\\.el\\'")
+                      (and (equal lisp "lisp")
+                           (directory-files "." t "-pkg\\.el\\'"))))
+         (libs (cl-set-difference (directory-files lisp t "\\.el\\'") pkgs))
+         (orgs (directory-files docs t "\\.org\\'"))
+         (updates (mapcar (lambda (lib)
+                            (list (intern
+                                   (file-name-sans-extension
+                                    (file-name-nondirectory lib)))
+                                  version))
+                          libs)))
+    (mapc (##sisyphus--edit-package % version updates) pkgs)
+    (mapc (##sisyphus--edit-library % version updates) libs)
+    (mapc (##sisyphus--edit-manual  % version) orgs)))
 
-(defun sisyphus--edit-package (name version)
-  (let ((file (expand-file-name (format "lisp/%s-pkg.el" name))))
-    (when (file-exists-p file)
-      (sisyphus--with-file file
-        (re-search-forward "^(define-package \"[^\"]+\" \"\\([^\"]+\\)\"$")
-        (replace-match version t t nil 1)))))
+(defun sisyphus--edit-package (file version updates)
+  (sisyphus--with-file file
+    (pcase-let* ((`(,_ ,name ,_ ,docstring ,deps . ,props)
+                  (read (current-buffer)))
+                 (deps (cadr deps)))
+      (erase-buffer)
+      (insert (format "(define-package %S %S\n  %S\n  '("
+                      name version docstring))
+      (when deps
+        (setq deps (elx--update-dependencies deps updates))
+        (let ((dep nil)
+              (format
+               (format "(%%-%is %%S)"
+                       (apply #'max
+                              (mapcar (##length (symbol-name (car %))) deps)))))
+          (while (setq dep (pop deps))
+            (indent-to 4)
+            (insert (format format (car dep) (cadr dep)))
+            (when deps (insert "\n")))))
+      (insert ")")
+      (when props
+        (let (key val)
+          (while (setq key (pop props) val (pop props))
+            (insert (format "\n  %s %S" key val)))))
+      (insert ")\n"))))
 
-(defun sisyphus--edit-library (name version)
-  (let ((file (expand-file-name (format "%s.el" name))))
-    (unless (file-exists-p file)
-      (setq file (expand-file-name (format "lisp/%s.el" name))))
-    (if (file-exists-p file)
-        (sisyphus--with-file file
-          (when (re-search-forward "^;; Package-Version: \\(.+\\)$" nil t)
-            (replace-match version t t nil 1)
-            (save-buffer)))
-      (error "Library %s.el not found" name))))
+(defun sisyphus--edit-library (file version updates)
+  (sisyphus--with-file file
+    (when (lm-header "Package-Version")
+      (delete-region (point) (line-end-position))
+      (insert version)
+      (goto-char (point-min)))
+    (when (re-search-forward
+           (format "(defconst %s-version \"\\([^\"]+\\)\""
+                   (file-name-sans-extension
+                    (file-name-nondirectory file)))
+           nil t)
+      (replace-match version nil t nil 1)
+      (goto-char (point-min)))
+    (unless (string-suffix-p "-git" version)
+      (elx-update-package-requires nil updates nil t))
+    (save-buffer)))
 
-(defun sisyphus--edit-manual (name version)
-  (let ((file (expand-file-name (format "docs/%s.org" name))))
-    (when (file-exists-p file)
-      (sisyphus--with-file file
-        (re-search-forward "^#\\+subtitle: for version \\(.+\\)$")
-        (replace-match version t t nil 1)
-        (re-search-forward "^This manual is for [^ ]+ version \\(.+\\)\\.$")
-        (replace-match version t t nil 1))
-      (magit-call-process "make" "texi"))))
+(defun sisyphus--edit-manual (file version)
+  (sisyphus--with-file file
+    (re-search-forward "^#\\+subtitle: for version \\(.+\\)$")
+    (replace-match version t t nil 1)
+    (re-search-forward "^This manual is for [^ ]+ version \\(.+\\)\\.$")
+    (replace-match version t t nil 1))
+  (magit-call-process "make" "texi"))
 
 (defun sisyphus--commit (msg)
   (magit-run-git
