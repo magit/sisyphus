@@ -180,7 +180,14 @@
       (replace-match version nil t nil 1)
       (goto-char (point-min)))
     (unless (string-suffix-p "-git" version)
-      (elx-update-package-requires nil updates nil t))
+      (elx-update-package-requires nil updates nil t)
+      (let ((prev (sisyphus--previous-version)))
+        (while (re-search-forward
+                ":package-version '([^ ]+ +\\. +\"\\([^\"]+\\)\")" nil t)
+          (let ((found (match-string-no-properties 1)))
+            (when (and (magit--version> found prev)
+                       (version< found version))
+              (replace-match version nil t nil 1))))))
     (save-buffer)))
 
 (defun sisyphus--edit-manual (file version)
