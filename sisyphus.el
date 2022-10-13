@@ -53,12 +53,12 @@
 (defun sisyphus-create-release (version)
   "Create a release commit, bumping version strings."
   (interactive
-   (let ((prev (caar (magit--list-releases))))
+   (let ((prev (sisyphus--previous-version)))
      (list (read-string (if prev
                             (format "Create release (previous was %s): " prev)
                           "Create first release: ")
                         prev))))
-  (when-let ((prev (caar (magit--list-releases))))
+  (when-let ((prev (sisyphus--previous-version)))
     (cond ((equal version prev)
            (user-error "Version must change: %s -> %s" prev version))
           ((version< version prev)
@@ -77,7 +77,7 @@
   (interactive)
   (magit-with-toplevel
     (let ((name (sisyphus--package-name))
-          (version (concat (caar (magit--list-releases)) "-git")))
+          (version (concat (sisyphus--previous-version) "-git")))
       (sisyphus--edit-library name version)
       (sisyphus--edit-manual name version))
     (sisyphus--commit "Resume development")
@@ -103,6 +103,9 @@
 
 (defun sisyphus--package-name ()
   (file-name-nondirectory (directory-file-name (magit-toplevel))))
+
+(defun sisyphus--previous-version ()
+  (caar (magit--list-releases)))
 
 (defun sisyphus--check-changelog (_name version)
   (let ((file (expand-file-name "CHANGELOG")))
