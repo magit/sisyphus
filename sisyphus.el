@@ -59,19 +59,9 @@
 ;;;###autoload
 (defun sisyphus-create-release (version)
   "Create a release commit, bumping version strings."
-  (interactive
-   (let ((prev (sisyphus--previous-version)))
-     (list (read-string (if prev
-                            (format "Create release (previous was %s): " prev)
-                          "Create first release: ")
-                        prev))))
-  (when-let ((prev (sisyphus--previous-version)))
-    (cond ((equal version prev)
-           (user-error "Version must change: %s -> %s" prev version))
-          ((version< version prev)
-           (user-error "Version must increase: %s -> %s" prev version))))
+  (interactive (list (sisyphus--read-version)))
   (magit-with-toplevel
-    (sisyphus--check-changelog version)
+    (sisyphus--bump-changelog version)
     (sisyphus--bump-version version)
     (sisyphus--commit (format "Release version %s" version))
     (magit-show-commit "HEAD")))
@@ -96,10 +86,10 @@
        (with-current-buffer (find-file-noselect ,file*)
          (save-excursion
            (goto-char (point-min))
-           ,@body)
-         (save-buffer)
-         (unless ,open*
-           (kill-buffer (current-buffer)))))))
+           (prog1 (progn ,@body)
+             (save-buffer)
+             (unless ,open*
+               (kill-buffer))))))))
 
 ;;; Functions
 
@@ -109,18 +99,62 @@
 (defun sisyphus--previous-version ()
   (caar (magit--list-releases)))
 
-(defun sisyphus--check-changelog (version)
+(defun sisyphus--get-changelog-version ()
+  (let ((file (expand-file-name "CHANGELOG")))
+    (and (file-exists-p file)
+         (sisyphus--with-file file
+           (and (re-search-forward "^\\* v\\([^ ]+\\)" nil t)
+                (match-string-no-properties 1))))))
+
+(defun sisyphus--read-version ()
+  (let* ((prev (sisyphus--previous-version))
+         (next (sisyphus--get-changelog-version))
+         (version (read-string
+                   (if prev
+                       (format "Create release (previous was %s): " prev)
+                     "Create first release: ")
+                   (cond ((and next
+                               (or (not prev)
+                                   (magit--version> next prev)))
+                          next)
+                         (prev
+                          (let ((v (version-to-list prev)))
+                            (mapconcat #'number-to-string
+                                       (nconc (butlast v)
+                                              (list (1+ (car (last v)))))
+                                       ".")))))))
+    (when (and prev (not (magit--version> version prev)))
+      (user-error "Version must increase, but %s is not greater than %s"
+                  version prev))
+    version))
+
+(defun sisyphus--bump-changelog (version)
   (let ((file (expand-file-name "CHANGELOG")))
     (when (file-exists-p file)
       (sisyphus--with-file file
-        (cond
-         ((not (re-search-forward
-                (format-time-string
-                 (format "^\\* v%s    \\(%%F$\\)?" version))
-                nil t))
-          (user-error "CHANGELOG entry missing"))
-         ((not (match-end 1))
-          (user-error "CHANGELOG entry unfinished")))))))
+        (if (re-search-forward "^\\* v\\([^ ]+\\) +\\(.+\\)$" nil t)
+            (let ((vers (match-string-no-properties 1))
+                  (date (match-string-no-properties 2))
+                  (prev (sisyphus--previous-version))
+                  (today (format-time-string "%F")))
+              (goto-char (line-beginning-position))
+              (cond
+               ((equal vers prev)
+                (insert (format "* v%-9s%s\n\n" version today))
+                (user-error "CHANGELOG entry missing; inserting stub"))
+               ((equal vers version)
+                (unless (equal date today)
+                  (replace-match today nil t nil 2)))
+               ((y-or-n-p
+                 (format "%sCHANGELOG version is %s, change%s to %s"
+                         (if prev (format "Previous version is %s, " prev) "")
+                         vers
+                         (if prev " latter" "")
+                         version))
+                (delete-region (point) (line-end-position))
+                (insert (format "* v%-9s%s" version today)))
+               ((user-error "Abort"))))
+          (user-error "Unsupported CHANGELOG format"))))))
 
 (defun sisyphus--bump-version (version)
   (let* ((lisp (if (file-directory-p "lisp") "lisp" "."))
