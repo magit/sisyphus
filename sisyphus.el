@@ -67,10 +67,12 @@
     (magit-show-commit "HEAD")))
 
 ;;;###autoload
-(defun sisyphus-bump-post-release ()
+(defun sisyphus-bump-post-release (version)
   "Create a post-release commit, bumping version strings."
-  (interactive)
+  (interactive (list (and (file-exists-p (expand-file-name "CHANGELOG"))
+                          (sisyphus--read-version "Tentative next release"))))
   (magit-with-toplevel
+    (sisyphus--bump-changelog version t)
     (sisyphus--bump-version (concat (sisyphus--previous-version) "-git"))
     (sisyphus--commit "Resume development")
     (magit-show-commit "HEAD")))
@@ -106,12 +108,14 @@
            (and (re-search-forward "^\\* v\\([^ ]+\\)" nil t)
                 (match-string-no-properties 1))))))
 
-(defun sisyphus--read-version ()
+(defun sisyphus--read-version (&optional prompt)
   (let* ((prev (sisyphus--previous-version))
          (next (sisyphus--get-changelog-version))
          (version (read-string
                    (if prev
-                       (format "Create release (previous was %s): " prev)
+                       (format "%s (previous was %s): "
+                               (or prompt "Create release")
+                               prev)
                      "Create first release: ")
                    (cond ((and next
                                (or (not prev)
@@ -128,7 +132,7 @@
                   version prev))
     version))
 
-(defun sisyphus--bump-changelog (version)
+(defun sisyphus--bump-changelog (version &optional stub)
   (let ((file (expand-file-name "CHANGELOG")))
     (when (file-exists-p file)
       (sisyphus--with-file file
@@ -139,6 +143,8 @@
                   (today (format-time-string "%F")))
               (goto-char (line-beginning-position))
               (cond
+               (stub
+                (insert (format "* v%-9sUNRELEASED\n\n" version)))
                ((equal vers prev)
                 (insert (format "* v%-9s%s\n\n" version today))
                 (user-error "CHANGELOG entry missing; inserting stub"))
