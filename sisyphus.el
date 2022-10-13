@@ -66,8 +66,7 @@
   (magit-with-toplevel
     (let ((name (sisyphus--package-name)))
       (sisyphus--check-changelog name version)
-      (sisyphus--edit-library name version)
-      (sisyphus--edit-manual name version))
+      (sisyphus--bump-versions name version))
     (sisyphus--commit (format "Release version %s" version))
     (magit-show-commit "HEAD")))
 
@@ -78,8 +77,7 @@
   (magit-with-toplevel
     (let ((name (sisyphus--package-name))
           (version (concat (sisyphus--previous-version) "-git")))
-      (sisyphus--edit-library name version)
-      (sisyphus--edit-manual name version))
+      (sisyphus--bump-versions name version))
     (sisyphus--commit "Resume development")
     (magit-show-commit "HEAD")))
 
@@ -119,6 +117,10 @@
           (user-error "CHANGELOG entry missing"))
          ((not (match-end 1))
           (user-error "CHANGELOG entry unfinished")))))))
+
+(defun sisyphus--bump-versions (name version)
+  (sisyphus--edit-library name version)
+  (sisyphus--edit-manual name version))
 
 (defun sisyphus--edit-package (name version)
   (let ((file (expand-file-name (format "lisp/%s-pkg.el" name))))
