@@ -101,6 +101,22 @@
 
 ;;; Functions
 
+(defun sisyphus--package-name ()
+  (file-name-nondirectory (directory-file-name (magit-toplevel))))
+
+(defun sisyphus--check-changelog (_name version)
+  (let ((file (expand-file-name "CHANGELOG")))
+    (when (file-exists-p file)
+      (sisyphus--with-file file
+        (cond
+         ((not (re-search-forward
+                (format-time-string
+                 (format "^\\* v%s    \\(%%F$\\)?" version))
+                nil t))
+          (user-error "CHANGELOG entry missing"))
+         ((not (match-end 1))
+          (user-error "CHANGELOG entry unfinished")))))))
+
 (defun sisyphus--edit-package (name version)
   (let ((file (expand-file-name (format "lisp/%s-pkg.el" name))))
     (when (file-exists-p file)
@@ -129,19 +145,6 @@
         (replace-match version t t nil 1))
       (magit-call-process "make" "texi"))))
 
-(defun sisyphus--check-changelog (_name version)
-  (let ((file (expand-file-name "CHANGELOG")))
-    (when (file-exists-p file)
-      (sisyphus--with-file file
-        (cond
-         ((not (re-search-forward
-                (format-time-string
-                 (format "^\\* v%s    \\(%%F$\\)?" version))
-                nil t))
-          (user-error "CHANGELOG entry missing"))
-         ((not (match-end 1))
-          (user-error "CHANGELOG entry unfinished")))))))
-
 (defun sisyphus--commit (msg)
   (magit-run-git
    "commit" "-a" "-m" msg
@@ -150,9 +153,6 @@
                         "--local-user=" (transient-args 'magit-tag))))
          (concat "--gpg-sign=" key))
      (transient-args 'magit-commit))))
-
-(defun sisyphus--package-name ()
-  (file-name-nondirectory (directory-file-name (magit-toplevel))))
 
 ;;; _
 (provide 'sisyphus)
