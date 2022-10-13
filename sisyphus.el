@@ -239,13 +239,14 @@
   (magit-call-process "make" "texi"))
 
 (defun sisyphus--commit (msg)
-  (magit-run-git
-   "commit" "-a" "-m" msg
-   (if (eq transient-current-command 'magit-tag)
-       (and-let* ((key (transient-arg-value
-                        "--local-user=" (transient-args 'magit-tag))))
-         (concat "--gpg-sign=" key))
-     (transient-args 'magit-commit))))
+  (magit-stage-modified)
+  (magit-commit-create
+   (list "--edit" "--message" msg
+         (if (eq transient-current-command 'magit-tag)
+             (and-let* ((key (transient-arg-value
+                              "--local-user=" (transient-args 'magit-tag))))
+               (concat "--gpg-sign=" key))
+           (transient-args 'magit-commit)))))
 
 ;;; _
 (provide 'sisyphus)
