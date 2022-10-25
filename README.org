@@ -7,8 +7,7 @@ are mine.
 
 That is, I don't think it is a good idea to put version strings in
 Elisp libraries, but because some of my packages are distributed on
-[Non]GNU Elpa, I have to do that anyway.  In fact, I created this
-package to reduce my annoyance at that requirment.
+[Non]GNU Elpa, I have to do that anyway.
 
 When creating a release the hope always is that one wouldn't have to
 make any changes for a while, but when version strings are embedded
