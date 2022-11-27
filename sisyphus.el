@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/magit/sisyphus
 ;; Keywords: git tools vc
 
-;; Package-Version: 0.1.0-git
+;; Package-Version: 0.1.0.50-git
 ;; Package-Requires: (
 ;;     (emacs "27")
 ;;     (compat "28.1.1.0")
@@ -54,6 +54,11 @@
 (transient-append-suffix 'magit-tag "r"
   '("g" "post release commit" sisyphus-bump-post-release))
 
+;;; Variables
+
+(defvar sisyphus--non-release-suffix ".50-git"
+  "String appended to version strings for non-release revisions.")
+
 ;;; Commands
 
 ;;;###autoload
@@ -73,7 +78,8 @@
                           (sisyphus--read-version "Tentative next release"))))
   (magit-with-toplevel
     (sisyphus--bump-changelog version t)
-    (sisyphus--bump-version (concat (sisyphus--previous-version) "-git"))
+    (sisyphus--bump-version (concat (sisyphus--previous-version)
+                                    sisyphus--non-release-suffix))
     (sisyphus--commit "Resume development")
     (magit-show-commit "HEAD")))
 
