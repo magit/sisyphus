@@ -245,7 +245,8 @@
   (magit-call-process "make" "texi"))
 
 (defun sisyphus--commit (msg)
-  (magit-stage-modified)
+  (let ((magit-inhibit-refresh t))
+    (magit-stage-1 "-u"))
   (magit-commit-create
    (list "--edit" "--message" msg
          (if (eq transient-current-command 'magit-tag)
