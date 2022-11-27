@@ -185,8 +185,13 @@ With prefix argument NOCOMMIT, do not create a commit."
                                    (file-name-sans-extension
                                     (file-name-nondirectory lib)))
                                   version))
-                          libs)))
-    (mapc (##sisyphus--edit-package % version updates) pkgs)
+                          libs))
+         (pkg-updates (if (string-suffix-p sisyphus--non-release-suffix version)
+                          (let ((timestamp (format-time-string "%Y%m%d")))
+                            (mapcar (pcase-lambda (`(,pkg ,_)) (list pkg timestamp))
+                                    updates))
+                        updates)))
+    (mapc (##sisyphus--edit-package % version pkg-updates) pkgs)
     (mapc (##sisyphus--edit-library % version updates) libs)
     (mapc (##sisyphus--edit-manual  % version) orgs)))
 
