@@ -62,24 +62,29 @@
 ;;; Commands
 
 ;;;###autoload
-(defun sisyphus-create-release (version)
-  "Create a release commit, bumping version strings."
+(defun sisyphus-create-release (version &optional nocommit)
+  "Create a release commit, bumping version strings.
+With prefix argument NOCOMMIT, do not create a commit."
   (interactive (list (sisyphus--read-version)))
   (magit-with-toplevel
     (sisyphus--bump-changelog version)
     (sisyphus--bump-version version)
-    (sisyphus--commit (format "Release version %s" version))))
+    (unless nocommit
+      (sisyphus--commit (format "Release version %s" version)))))
 
 ;;;###autoload
-(defun sisyphus-bump-post-release (version)
-  "Create a post-release commit, bumping version strings."
+(defun sisyphus-bump-post-release (version &optional nocommit)
+  "Create a post-release commit, bumping version strings.
+With prefix argument NOCOMMIT, do not create a commit."
   (interactive (list (and (file-exists-p (expand-file-name "CHANGELOG"))
-                          (sisyphus--read-version "Tentative next release"))))
+                          (sisyphus--read-version "Tentative next release"))
+                     current-prefix-arg))
   (magit-with-toplevel
     (sisyphus--bump-changelog version t)
     (sisyphus--bump-version (concat (sisyphus--previous-version)
                                     sisyphus--non-release-suffix))
-    (sisyphus--commit "Resume development")))
+    (unless nocommit
+      (sisyphus--commit "Resume development"))))
 
 ;;; Macros
 
