@@ -68,8 +68,7 @@
   (magit-with-toplevel
     (sisyphus--bump-changelog version)
     (sisyphus--bump-version version)
-    (sisyphus--commit (format "Release version %s" version))
-    (magit-show-commit "HEAD")))
+    (sisyphus--commit (format "Release version %s" version))))
 
 ;;;###autoload
 (defun sisyphus-bump-post-release (version)
@@ -80,8 +79,7 @@
     (sisyphus--bump-changelog version t)
     (sisyphus--bump-version (concat (sisyphus--previous-version)
                                     sisyphus--non-release-suffix))
-    (sisyphus--commit "Resume development")
-    (magit-show-commit "HEAD")))
+    (sisyphus--commit "Resume development")))
 
 ;;; Macros
 
