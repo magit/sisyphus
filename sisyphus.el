@@ -196,11 +196,11 @@ With prefix argument NOCOMMIT, do not create a commit."
                           (mapcar (pcase-lambda (`(,pkg ,_)) (list pkg timestamp))
                                   updates))
                       updates)))
-    (mapc (##sisyphus--edit-package % version pkg-updates) pkgs)
-    (mapc (##sisyphus--edit-library % version updates) libs)
-    (mapc (##sisyphus--edit-manual  % version) orgs)))
+    (mapc (##sisyphus--bump-version-pkg % version pkg-updates) pkgs)
+    (mapc (##sisyphus--bump-version-lib % version updates) libs)
+    (mapc (##sisyphus--bump-version-org  % version) orgs)))
 
-(defun sisyphus--edit-package (file version updates)
+(defun sisyphus--bump-version-pkg (file version updates)
   (sisyphus--with-file file
     (pcase-let* ((`(,_ ,name ,_ ,docstring ,deps . ,props)
                   (read (current-buffer)))
@@ -226,7 +226,7 @@ With prefix argument NOCOMMIT, do not create a commit."
             (insert (format "\n  %s %S" key val)))))
       (insert ")\n"))))
 
-(defun sisyphus--edit-library (file version updates)
+(defun sisyphus--bump-version-lib (file version updates)
   (sisyphus--with-file file
     (when (lm-header "Package-Version")
       (delete-region (point) (line-end-position))
@@ -250,7 +250,7 @@ With prefix argument NOCOMMIT, do not create a commit."
               (replace-match version nil t nil 1))))))
     (save-buffer)))
 
-(defun sisyphus--edit-manual (file version)
+(defun sisyphus--bump-version-org (file version)
   (sisyphus--with-file file
     (re-search-forward "^#\\+subtitle: for version \\(.+\\)$")
     (replace-match version t t nil 1)
