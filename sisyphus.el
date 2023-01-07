@@ -171,7 +171,7 @@ With prefix argument NOCOMMIT, do not create a commit."
                ((user-error "Abort"))))
           (user-error "Unsupported CHANGELOG format"))))))
 
-(defun sisyphus--bump-version (version)
+(defun sisyphus--list-files ()
   (let* ((lisp (if (file-directory-p "lisp") "lisp" "."))
          (docs (if (file-directory-p "docs") "docs" "."))
          (pkgs (nconc (directory-files lisp t "-pkg\\.el\\'")
@@ -179,18 +179,23 @@ With prefix argument NOCOMMIT, do not create a commit."
                            (directory-files "." t "-pkg\\.el\\'"))))
          (libs (cl-set-difference (directory-files lisp t "\\.el\\'") pkgs))
          (orgs (cl-delete "README.org" (directory-files docs t "\\.org\\'")
-                          :test #'equal :key #'file-name-nondirectory))
-         (updates (mapcar (lambda (lib)
-                            (list (intern
-                                   (file-name-sans-extension
-                                    (file-name-nondirectory lib)))
-                                  version))
-                          libs))
-         (pkg-updates (if (string-suffix-p sisyphus--non-release-suffix version)
-                          (let ((timestamp (format-time-string "%Y%m%d")))
-                            (mapcar (pcase-lambda (`(,pkg ,_)) (list pkg timestamp))
-                                    updates))
-                        updates)))
+                          :test #'equal :key #'file-name-nondirectory)))
+    (list libs pkgs orgs)))
+
+(defun sisyphus--bump-version (version)
+  (pcase-let*
+      ((`(,libs ,pkgs ,orgs) (sisyphus--list-files))
+       (updates (mapcar (lambda (lib)
+                          (list (intern
+                                 (file-name-sans-extension
+                                  (file-name-nondirectory lib)))
+                                version))
+                        libs))
+       (pkg-updates (if (string-suffix-p sisyphus--non-release-suffix version)
+                        (let ((timestamp (format-time-string "%Y%m%d")))
+                          (mapcar (pcase-lambda (`(,pkg ,_)) (list pkg timestamp))
+                                  updates))
+                      updates)))
     (mapc (##sisyphus--edit-package % version pkg-updates) pkgs)
     (mapc (##sisyphus--edit-library % version updates) libs)
     (mapc (##sisyphus--edit-manual  % version) orgs)))
