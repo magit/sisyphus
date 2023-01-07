@@ -41,6 +41,7 @@
 (require 'compat)
 (require 'llama)
 
+(require 'copyright)
 (require 'elx)
 (require 'magit-tag)
 
@@ -52,7 +53,10 @@
 (transient-suffix-put 'magit-tag "r" :description "release tag")
 
 (transient-append-suffix 'magit-tag "r"
-  '("g" "post release commit" sisyphus-bump-post-release))
+  '("g" "post release commit"  sisyphus-bump-post-release))
+
+(transient-append-suffix 'magit-tag "g"
+  '("y" "bump copyright years" sisyphus-bump-copyright))
 
 ;;; Variables
 
@@ -85,6 +89,16 @@ With prefix argument NOCOMMIT, do not create a commit."
                                     sisyphus--non-release-suffix))
     (unless nocommit
       (sisyphus--commit "Resume development"))))
+
+;;;###autoload
+(defun sisyphus-bump-copyright (&optional nocommit)
+  "Bump copyright years and commit the result.
+With prefix argument NOCOMMIT, do not create a commit."
+  (interactive "P")
+  (magit-with-toplevel
+    (sisyphus--bump-copyright)
+    (unless nocommit
+      (sisyphus--commit "Bump copyright years"))))
 
 ;;; Macros
 
@@ -257,6 +271,18 @@ With prefix argument NOCOMMIT, do not create a commit."
     (re-search-forward "^This manual is for [^ ]+ version \\(.+\\)\\.$")
     (replace-match version t t nil 1))
   (magit-call-process "make" "texi"))
+
+(defun sisyphus--bump-copyright ()
+  (pcase-let ((`(,libs ,_ ,orgs) (sisyphus--list-files)))
+    (mapc (##sisyphus--bump-copyright-lib %) libs)
+    (when orgs
+      (magit-call-process "make" "clean" "texi" "all"))))
+
+(defun sisyphus--bump-copyright-lib (file)
+  (sisyphus--with-file file
+    (let ((copyright-update t)
+          (copyright-query nil))
+      (copyright-update))))
 
 (defun sisyphus--commit (msg)
   (let ((magit-inhibit-refresh t))
