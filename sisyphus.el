@@ -74,7 +74,7 @@ With prefix argument NOCOMMIT, do not create a commit."
     (sisyphus--bump-changelog version)
     (sisyphus--bump-version version)
     (unless nocommit
-      (sisyphus--commit (format "Release version %s" version)))))
+      (sisyphus--commit (format "Release version %s" version) t))))
 
 ;;;###autoload
 (defun sisyphus-bump-post-release (version &optional nocommit)
@@ -284,7 +284,7 @@ With prefix argument NOCOMMIT, do not create a commit."
           (copyright-query nil))
       (copyright-update))))
 
-(defun sisyphus--commit (msg)
+(defun sisyphus--commit (msg &optional allow-empty)
   (let ((magit-inhibit-refresh t))
     (magit-stage-1 "-u"))
   (magit-commit-create
@@ -293,7 +293,8 @@ With prefix argument NOCOMMIT, do not create a commit."
              (and-let* ((key (transient-arg-value
                               "--local-user=" (transient-args 'magit-tag))))
                (concat "--gpg-sign=" key))
-           (transient-args 'magit-commit)))))
+           (transient-args 'magit-commit))
+         (and allow-empty "--allow-empty"))))
 
 ;;; _
 (provide 'sisyphus)
