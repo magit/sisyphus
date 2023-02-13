@@ -212,7 +212,7 @@ With prefix argument NOCOMMIT, do not create a commit."
                       updates)))
     (mapc (##sisyphus--bump-version-pkg % version pkg-updates) pkgs)
     (mapc (##sisyphus--bump-version-lib % version updates) libs)
-    (mapc (##sisyphus--bump-version-org  % version) orgs)))
+    (mapc (##sisyphus--bump-version-org % version) orgs)))
 
 (defun sisyphus--bump-version-pkg (file version updates)
   (sisyphus--with-file file
