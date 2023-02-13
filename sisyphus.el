@@ -71,8 +71,10 @@
 With prefix argument NOCOMMIT, do not create a commit."
   (interactive (list (sisyphus--read-version)))
   (magit-with-toplevel
-    (sisyphus--bump-changelog version)
-    (sisyphus--bump-version version)
+    (let ((magit-inhibit-refresh t)
+          (magit--disable-save-buffers t))
+      (sisyphus--bump-changelog version)
+      (sisyphus--bump-version version))
     (unless nocommit
       (sisyphus--commit (format "Release version %s" version) t))))
 
@@ -84,9 +86,11 @@ With prefix argument NOCOMMIT, do not create a commit."
                           (sisyphus--read-version "Tentative next release"))
                      current-prefix-arg))
   (magit-with-toplevel
-    (sisyphus--bump-changelog version t)
-    (sisyphus--bump-version (concat (sisyphus--previous-version)
-                                    sisyphus--non-release-suffix))
+    (let ((magit-inhibit-refresh t)
+          (magit--disable-save-buffers t))
+      (sisyphus--bump-changelog version t)
+      (sisyphus--bump-version (concat (sisyphus--previous-version)
+                                      sisyphus--non-release-suffix)))
     (unless nocommit
       (sisyphus--commit "Resume development"))))
 
@@ -96,7 +100,9 @@ With prefix argument NOCOMMIT, do not create a commit."
 With prefix argument NOCOMMIT, do not create a commit."
   (interactive "P")
   (magit-with-toplevel
-    (sisyphus--bump-copyright)
+    (let ((magit-inhibit-refresh t)
+          (magit--disable-save-buffers t))
+      (sisyphus--bump-copyright))
     (unless nocommit
       (sisyphus--commit "Bump copyright years"))))
 
