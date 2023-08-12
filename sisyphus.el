@@ -197,8 +197,11 @@ With prefix argument NOCOMMIT, do not create a commit."
          (pkgs (nconc (directory-files lisp t "-pkg\\.el\\'")
                       (and (equal lisp "lisp")
                            (directory-files "." t "-pkg\\.el\\'"))))
-         (libs (cl-set-difference (directory-files lisp t "\\.el\\'") pkgs
-                                  :test #'equal))
+         (libs (cl-set-difference
+                (directory-files lisp t "\\.el\\'")
+                (nconc (directory-files lisp t "-autoloads\\.el\\'")
+                       pkgs)
+                :test #'equal))
          (orgs (cl-delete "README.org" (directory-files docs t "\\.org\\'")
                           :test #'equal :key #'file-name-nondirectory)))
     (list libs pkgs orgs)))
