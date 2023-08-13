@@ -209,19 +209,19 @@ With prefix argument NOCOMMIT, do not create a commit."
 (defun sisyphus--bump-version (version)
   (pcase-let*
       ((`(,libs ,pkgs ,orgs) (sisyphus--list-files))
-       (updates (mapcar (lambda (lib)
-                          (list (intern
-                                 (file-name-sans-extension
-                                  (file-name-nondirectory lib)))
-                                version))
-                        libs))
+       (lib-updates (mapcar (lambda (lib)
+                              (list (intern
+                                     (file-name-sans-extension
+                                      (file-name-nondirectory lib)))
+                                    version))
+                            libs))
        (pkg-updates (if (string-suffix-p sisyphus--non-release-suffix version)
                         (let ((timestamp (format-time-string "%Y%m%d")))
                           (mapcar (pcase-lambda (`(,pkg ,_)) (list pkg timestamp))
-                                  updates))
-                      updates)))
+                                  lib-updates))
+                      lib-updates)))
     (mapc (##sisyphus--bump-version-pkg % version pkg-updates) pkgs)
-    (mapc (##sisyphus--bump-version-lib % version updates) libs)
+    (mapc (##sisyphus--bump-version-lib % version lib-updates) libs)
     (mapc (##sisyphus--bump-version-org % version) orgs)))
 
 (defun sisyphus--bump-version-pkg (file version updates)
