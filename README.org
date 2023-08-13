@@ -7,18 +7,8 @@ are mine.
 
 That is, I don't think it is a good idea to put version strings in
 Elisp libraries, but because some of my packages are distributed on
-[Non]GNU Elpa, I have to do that anyway.
-
-When creating a release the hope is that one wouldn't have to make
-any changes for a while, but when version strings are embedded in
-libraries, then that is impossible because one has to change that
-string from ~VERSION~ to ~VERSION.50-git~ (or similar) after a release,
-else all commits until the next release would self-identify as
-~VERSION~.
-
-Also, in my experience, minor defects have a tendency to be reported
-right after a release, not in the months leading up to it, during
-which there was little to no activity.  Thus the name of this package.
+[Non]GNU Elpa, I have to do that anyway.  Please see the docstring
+of ~sisyphus-non-release-bump-header~ for more information.
 
 *Typical workflow*
 

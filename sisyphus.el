@@ -60,8 +60,84 @@
 
 ;;; Variables
 
-(defvar sisyphus--non-release-suffix ".50-git"
-  "String appended to version strings for non-release revisions.")
+(defvar sisyphus-non-release-bump-header nil
+  "Whether to bump the `Package-Version' header for non-releases.
+
+MELPA prefers release tags over the `Package-Version' library
+header, and for packages that are only distributed on MELPA, I
+strongly recommend that you do not add this header at all.
+
+Elpa-Admin, the tool used to maintain GNU ELPA and NonGNU ELPA,
+relies exclusively on the `Package-Version' header, making it
+mandatory to set that header if a package is to be distributed
+there.
+
+The functions, which Emacs uses to compare version strings, only
+support release and pre-release version strings.  Contrary to
+what you might expect, they, for example, consider \"1.0-git\" to
+be smaller than 1.0.  That makes it very difficult to bump the
+`Package-Version' after a release in order for it not to provide
+incorrect information.
+
+As it stands, we are left with to unsatisfactory options on how
+to deal with the `Package-Version' header after a release.
+
+1) We leave the header untouched until the next release.  This is
+   very unfortunate because it means that every commit inbetween
+   the releases N and N+1 will claim to actually be N.
+
+   I regret having to knowingly provide incorrect information,
+   but after years of refining the workaround that is the other
+   option, I have given up, and now recommend you too just learn
+   to live with this unfortunate situation as well.  (But again,
+   if your package is not distributed on GNU ELPA or NonGNU ELPA,
+   just avoid this situation by not adding this header at all.)
+
+2) We bump the header in the first commit after a release by
+   appending a suffix that is understood by Emacs and Elpa-Admin,
+   and hopefully humans alike, as signifying a development
+   snapshot that comes after the named release.
+
+   Unfortunately, due to a series of blunders in how these tools
+   work, this results in very ugly and long version strings.
+
+   The suffix must contain something like \"-git\", because without
+   such a pre-release suffix Elpa-Admin would mistake the \"this
+   is not a release\" suffix for just another release.
+
+   Because N-git is considered to be smaller than N, we have to
+   aditionally inject a numeric part inbetween the release N and
+   the suffix.  Unlike N-git, N.50-git is greater than N.  Note
+   that N.0-git would not work because N.0 is equal to N, so
+   N.0-git too is smaller than N.
+
+   Having to use such a noisy suffix is bad enough, but
+   unfortunately Elpa-Admin then turns it into something even
+   uglier.  \"1.2.3.50-git\", for example, becomes something like
+   \"1.2.3.50-snapshot0.20230813.123456\".
+
+A package may embbed version strings in other places beside the
+`Package-Version', in its manual, for example.  I recommend that
+you add a post-release suffix to these version strings after a
+release.  Because these version strings are not used by Emacs,
+we can ignore that Emacs does not support post-release version
+strings.
+
+The default suffix, specified by `sisyphus-non-release-suffix',
+is \"-devel\", which was chosen over, e.g. \"-git\", because Emacs
+does not recognize the former at all, while would considers the
+latter to be a pre-release suffix.
+
+Given the default values of `sisyphus-non-release-suffix' and
+this variable, the command `sisyphus-bump-post-release' bumps
+all embedded version strings by appending \"-devel\", except for
+the `Package-Version' header, which it leaves untouched.")
+
+(defvar sisyphus-non-release-suffix "-devel"
+  "String appended to version strings for non-release revisions.
+Depending on the value of `sisyphus-non-release-bump-header'
+\(which see), this suffix is appended to all embedded version
+strings, or to all except for the `Package-Version' header.")
 
 ;;; Commands
 
@@ -85,12 +161,17 @@ With prefix argument NOCOMMIT, do not create a commit."
   (interactive (list (and (file-exists-p (expand-file-name "CHANGELOG"))
                           (sisyphus--read-version "Tentative next release"))
                      current-prefix-arg))
+  (when (and sisyphus-non-release-bump-header
+             (not (string-match-p "\\.[1-9][0-9]*-[a-z]*\\'"
+                                  sisyphus-non-release-suffix)))
+    (user-error "Configured `%s' cannot be used in header: %S"
+                'sisyphus-non-release-suffix
+                sisyphus-non-release-suffix))
   (magit-with-toplevel
     (let ((magit-inhibit-refresh t)
           (magit--disable-save-buffers t))
       (sisyphus--bump-changelog version t)
-      (sisyphus--bump-version (concat (sisyphus--previous-version)
-                                      sisyphus--non-release-suffix)))
+      (sisyphus--bump-version (sisyphus--previous-version) t))
     (unless nocommit
       (sisyphus--commit "Resume development"))))
 
@@ -206,22 +287,25 @@ With prefix argument NOCOMMIT, do not create a commit."
                           :test #'equal :key #'file-name-nondirectory)))
     (list libs pkgs orgs)))
 
-(defun sisyphus--bump-version (version)
+(defun sisyphus--bump-version (release &optional post-release)
   (pcase-let*
       ((`(,libs ,pkgs ,orgs) (sisyphus--list-files))
+       (version (if post-release
+                    (concat release sisyphus-non-release-suffix)
+                  release))
        (lib-updates (mapcar (lambda (lib)
                               (list (intern
                                      (file-name-sans-extension
                                       (file-name-nondirectory lib)))
                                     version))
                             libs))
-       (pkg-updates (if (string-suffix-p sisyphus--non-release-suffix version)
+       (pkg-updates (if post-release
                         (let ((timestamp (format-time-string "%Y%m%d")))
                           (mapcar (pcase-lambda (`(,pkg ,_)) (list pkg timestamp))
                                   lib-updates))
                       lib-updates)))
     (mapc (##sisyphus--bump-version-pkg % version pkg-updates) pkgs)
-    (mapc (##sisyphus--bump-version-lib % version lib-updates) libs)
+    (mapc (##sisyphus--bump-version-lib % version release lib-updates) libs)
     (mapc (##sisyphus--bump-version-org % version) orgs)))
 
 (defun sisyphus--bump-version-pkg (file version updates)
@@ -250,11 +334,13 @@ With prefix argument NOCOMMIT, do not create a commit."
             (insert (format "\n  %s %S" key val)))))
       (insert ")\n"))))
 
-(defun sisyphus--bump-version-lib (file version updates)
+(defun sisyphus--bump-version-lib (file version release updates)
   (sisyphus--with-file file
     (when (lm-header "Package-Version")
       (delete-region (point) (line-end-position))
-      (insert version)
+      ;; If we are creating a release, then `version' and `release'
+      ;; are the same, so then this conditional makes no difference.
+      (insert (if sisyphus-non-release-bump-header version release))
       (goto-char (point-min)))
     (when (re-search-forward
            (format "(defconst %s-version \"\\([^\"]+\\)\""
