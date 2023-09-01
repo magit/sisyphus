@@ -124,7 +124,7 @@ we can ignore that Emacs does not support post-release version
 strings.
 
 The default suffix, specified by `sisyphus-non-release-suffix',
-is \"-devel\", which was chosen over, e.g. \"-git\", because Emacs
+is \"-devel\", which was chosen over, e.g., \"-git\", because Emacs
 does not recognize the former at all, while would considers the
 latter to be a pre-release suffix.
 
