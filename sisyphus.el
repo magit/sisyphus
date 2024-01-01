@@ -1,6 +1,6 @@
 ;;; sisyphus.el --- Create releases of Emacs packages  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2022-2023 Jonas Bernoulli
+;; Copyright (C) 2022-2024 Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/sisyphus
