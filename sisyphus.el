@@ -185,7 +185,7 @@ With prefix argument NOCOMMIT, do not create a commit."
           (magit--disable-save-buffers t))
       (sisyphus--bump-copyright))
     (unless nocommit
-      (sisyphus--commit "Bump copyright years"))))
+      (sisyphus--commit "Bump copyright years" nil t))))
 
 ;;; Macros
 
@@ -380,11 +380,12 @@ With prefix argument NOCOMMIT, do not create a commit."
           (copyright-query nil))
       (copyright-update))))
 
-(defun sisyphus--commit (msg &optional allow-empty)
+(defun sisyphus--commit (msg &optional allow-empty no-edit)
   (let ((magit-inhibit-refresh t))
     (magit-stage-1 "-u"))
   (magit-commit-create
    (list "--edit" "--message" msg
+         (and no-edit "--no-edit")
          (if (eq transient-current-command 'magit-tag)
              (and-let* ((key (transient-arg-value
                               "--local-user=" (transient-args 'magit-tag))))
