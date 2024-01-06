@@ -79,8 +79,8 @@ be smaller than 1.0.  That makes it very difficult to bump the
 `Package-Version' after a release in order for it not to provide
 incorrect information.
 
-As it stands, we are left with to unsatisfactory options on how
-to deal with the `Package-Version' header after a release.
+As it stands, we are left with two unsatisfactory options to deal
+with the `Package-Version' header after a release.
 
 1) We leave the header untouched until the next release.  This is
    very unfortunate because it means that every commit inbetween
@@ -106,7 +106,7 @@ to deal with the `Package-Version' header after a release.
    is not a release\" suffix for just another release.
 
    Because N-git is considered to be smaller than N, we have to
-   aditionally inject a numeric part inbetween the release N and
+   additionally inject a numeric part inbetween the release N and
    the suffix.  Unlike N-git, N.50-git is greater than N.  Note
    that N.0-git would not work because N.0 is equal to N, so
    N.0-git too is smaller than N.
@@ -117,7 +117,7 @@ to deal with the `Package-Version' header after a release.
    \"1.2.3.50-snapshot0.20230813.123456\".
 
 A package may embbed version strings in other places beside the
-`Package-Version', in its manual, for example.  I recommend that
+`Package-Version', in manuals, for example.  I recommend that
 you add a post-release suffix to these version strings after a
 release.  Because these version strings are not used by Emacs,
 we can ignore that Emacs does not support post-release version
@@ -125,7 +125,7 @@ strings.
 
 The default suffix, specified by `sisyphus-non-release-suffix',
 is \"-devel\", which was chosen over, e.g., \"-git\", because Emacs
-does not recognize the former at all, while would considers the
+does not recognize the former at all, while it would considers the
 latter to be a pre-release suffix.
 
 Given the default values of `sisyphus-non-release-suffix' and
