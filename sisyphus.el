@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2022-2024 Jonas Bernoulli
 
-;; Author: Jonas Bernoulli <jonas@bernoul.li>
+;; Author: Jonas Bernoulli <emacs.sisyphus@jonas.bernoulli.dev>
 ;; Homepage: https://github.com/magit/sisyphus
 ;; Keywords: git tools vc
 
