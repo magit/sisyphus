@@ -318,20 +318,18 @@ With prefix argument NOCOMMIT, do not create a commit."
                       name version docstring))
       (when deps
         (setq deps (elx--update-dependencies deps updates))
-        (let ((dep nil)
-              (format
+        (let ((format
                (format "(%%-%is %%S)"
                        (apply #'max
                               (mapcar (##length (symbol-name (car %))) deps)))))
-          (while (setq dep (pop deps))
+          (while-let ((dep (pop deps)))
             (indent-to 4)
             (insert (format format (car dep) (cadr dep)))
             (when deps (insert "\n")))))
       (insert ")")
-      (when props
-        (let (key val)
-          (while (setq key (pop props) val (pop props))
-            (insert (format "\n  %s %S" key val)))))
+      (while-let ((key (pop props))
+                  (val (pop props)))
+        (insert (format "\n  %s %S" key val)))
       (insert ")\n"))))
 
 (defun sisyphus--bump-version-lib (file version release updates)
