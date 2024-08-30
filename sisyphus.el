@@ -360,11 +360,18 @@ With prefix argument NOCOMMIT, do not create a commit."
 
 (defun sisyphus--bump-version-org (file version)
   (sisyphus--with-file file
-    (re-search-forward "^#\\+subtitle: for version \\(.+\\)$")
-    (replace-match version t t nil 1)
-    (re-search-forward "^This manual is for [^ ]+ version \\(.+\\)\\.$")
-    (replace-match version t t nil 1))
-  (magit-call-process "make" "texi"))
+    (let ((modified nil))
+      (save-excursion
+        (when (re-search-forward
+               "^#\\+subtitle: for version \\(.+\\)$" nil t)
+          (replace-match version t t nil 1)
+          (setq modified t))
+        (when (re-search-forward
+               "^This manual is for [^ ]+ version \\(.+\\)\\.$" nil t)
+          (replace-match version t t nil 1)
+          (setq modified t)))
+      (when modified
+        (magit-call-process "make" "texi")))))
 
 (defun sisyphus--bump-copyright ()
   (pcase-let ((`(,libs ,_ ,orgs) (sisyphus--list-files)))
