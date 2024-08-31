@@ -359,8 +359,8 @@ With prefix argument NOCOMMIT, do not create a commit."
     (save-buffer)))
 
 (defun sisyphus--bump-version-org (file version)
-  (sisyphus--with-file file
-    (let ((modified nil))
+  (let ((modified nil))
+    (sisyphus--with-file file
       (while (re-search-forward "{{{version(\\([^)]+\\))}}}" nil t)
         (replace-match version t t nil 1)
         (setq modified t))
@@ -373,9 +373,9 @@ With prefix argument NOCOMMIT, do not create a commit."
           (when (re-search-forward
                  "^This manual is for [^ ]+ version \\(.+\\)\\.$" nil t)
             (replace-match version t t nil 1)
-            (setq modified t)))
-        (when modified
-          (magit-call-process "make" "texi"))))))
+            (setq modified t)))))
+    (when modified
+      (magit-call-process "make" "texi"))))
 
 (defun sisyphus--bump-copyright ()
   (pcase-let ((`(,libs ,_ ,orgs) (sisyphus--list-files)))
