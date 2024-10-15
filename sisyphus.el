@@ -33,9 +33,6 @@
 
 ;; Create a release and watch it roll down the hill again.
 
-;; Recommended setup:
-;;   (with-eval-after-load 'magit (require 'sisyphus))
-
 ;;; Code:
 
 (require 'compat)
@@ -45,18 +42,29 @@
 (require 'elx)
 (require 'magit-tag)
 
-;;; Key Bindings
+;;; Add Bindings
 
-(transient-insert-suffix 'magit-tag "r"
-  '("c" "release commit" sisyphus-create-release))
+;;;###autoload
+(defvar sisyphus-add-default-bindings t
+  "Whether to add Sisyphus commands to the `magit-tag' menu.
 
-(transient-suffix-put 'magit-tag "r" :description "release tag")
+If you want to disable that, you must set this to nil before
+`magit-tag' is loaded (which happens when `magit' is loaded.")
 
-(transient-append-suffix 'magit-tag "r"
-  '("g" "post release commit"  sisyphus-bump-post-release))
+;;;###autoload
+(with-eval-after-load 'magit-tag
+  (when sisyphus-add-default-bindings
 
-(transient-append-suffix 'magit-tag "g"
-  '("y" "bump copyright years" sisyphus-bump-copyright))
+    (transient-insert-suffix 'magit-tag "r"
+      '("c" "release commit" sisyphus-create-release))
+
+    (transient-suffix-put 'magit-tag "r" :description "release tag")
+
+    (transient-append-suffix 'magit-tag "r"
+      '("g" "post release commit"  sisyphus-bump-post-release))
+
+    (transient-append-suffix 'magit-tag "g"
+      '("y" "bump copyright years" sisyphus-bump-copyright))))
 
 ;;; Variables
 
