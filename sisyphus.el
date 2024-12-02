@@ -91,7 +91,7 @@ As it stands, we are left with two unsatisfactory options to deal
 with the `Package-Version' header after a release.
 
 1) We leave the header untouched until the next release.  This is
-   very unfortunate because it means that every commit inbetween
+   very unfortunate because it means that every commit in between
    the releases N and N+1 will claim to actually be N.
 
    I regret having to knowingly provide incorrect information,
@@ -114,7 +114,7 @@ with the `Package-Version' header after a release.
    is not a release\" suffix for just another release.
 
    Because N-git is considered to be smaller than N, we have to
-   additionally inject a numeric part inbetween the release N and
+   additionally inject a numeric part in between the release N and
    the suffix.  Unlike N-git, N.50-git is greater than N.  Note
    that N.0-git would not work because N.0 is equal to N, so
    N.0-git too is smaller than N.
