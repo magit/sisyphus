@@ -147,6 +147,36 @@ Depending on the value of `sisyphus-non-release-bump-header'
 \(which see), this suffix is appended to all embedded version
 strings, or to all except for the `Package-Version' header.")
 
+(defvar sisyphus-changelog-file "CHANGELOG"
+  "The file that contains the changelog.")
+
+(defvar sisyphus-changelog-entry-regexp "^\\* v\\([^ ]+\\) +\\(.+\\)$"
+  "Regexp used to match the beginning of an entry in a changelog file.
+
+The file is searched from the beginning.  I.e., it is assumed
+that the first entry concerns either the unreleased development
+version or the latest release.
+
+The first match group must match the version string, without any
+prefix such as \"v\".  The second match group must match a date
+string.
+
+The default value matches Org mode headings like these:
+
+* v2.0.0    UNRELEASED
+
+Description of upcoming changes.
+
+* v1.0.0    2024/01/05
+
+Description of changes in v1.0.0.
+
+The regexp specified here, must match the format specified by
+`sisyphus-changelog-stub-format'.")
+
+(defvar sisyphus-changelog-heading-format "* v%-8v %d\n\n"
+  "Format string used to insert changelog headings.")
+
 ;;; Commands
 
 ;;;###autoload
@@ -220,10 +250,10 @@ With prefix argument NOCOMMIT, do not create a commit."
   (caar (magit--list-releases)))
 
 (defun sisyphus--get-changelog-version ()
-  (let ((file (expand-file-name "CHANGELOG")))
+  (let ((file (expand-file-name sisyphus-changelog-file)))
     (and (file-exists-p file)
          (sisyphus--with-file file
-           (and (re-search-forward "^\\* v\\([^ ]+\\)" nil t)
+           (and (re-search-forward sisyphus-changelog-entry-regexp nil t)
                 (match-string-no-properties 1))))))
 
 (defun sisyphus--read-version (&optional prompt)
@@ -251,10 +281,10 @@ With prefix argument NOCOMMIT, do not create a commit."
     version))
 
 (defun sisyphus--bump-changelog (version &optional stub)
-  (let ((file (expand-file-name "CHANGELOG")))
+  (let ((file (expand-file-name sisyphus-changelog-file)))
     (when (file-exists-p file)
       (sisyphus--with-file file
-        (if (re-search-forward "^\\* v\\([^ ]+\\) +\\(.+\\)$" nil t)
+        (if (re-search-forward sisyphus-changelog-entry-regexp nil t)
             (let ((vers (match-string-no-properties 1))
                   (date (match-string-no-properties 2))
                   (prev (sisyphus--previous-version))
@@ -262,12 +292,13 @@ With prefix argument NOCOMMIT, do not create a commit."
               (goto-char (line-beginning-position))
               (cond
                (stub
-                (insert (format "* v%-9sUNRELEASED\n\n" version)))
+                (sisyphus--bump-changelog-insert-heading version "UNRELEASED"))
                ((equal vers prev)
-                (insert (format "* v%-9s%s\n\n" version today))
+                (sisyphus--bump-changelog-insert-heading version today)
                 (user-error "CHANGELOG entry missing; inserting stub"))
                ((equal vers version)
-                (unless (equal date today)
+                (when (and (not (equal date today))
+                           (match-beginning 2))
                   (replace-match today nil t nil 2)))
                ((y-or-n-p
                  (format "%sCHANGELOG version is %s, change%s to %s"
@@ -276,9 +307,16 @@ With prefix argument NOCOMMIT, do not create a commit."
                          (if prev " latter" "")
                          version))
                 (delete-region (point) (line-end-position))
-                (insert (format "* v%-9s%s" version today)))
+                (when (re-search-forward "\\=\n+" nil t)
+                  (delete-region (match-beginning 0) (match-end 0)))
+                (sisyphus--bump-changelog-insert-heading version today))
                ((user-error "Abort"))))
           (user-error "Unsupported CHANGELOG format"))))))
+
+(defun sisyphus--bump-changelog-insert-heading (version date)
+  (insert (format-spec sisyphus-changelog-heading-format
+                       `((?v . ,version)
+                         (?d . ,date)))))
 
 (defun sisyphus--list-files ()
   (let* ((lisp (if (file-directory-p "lisp") "lisp" "."))
