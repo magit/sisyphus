@@ -69,26 +69,26 @@ If you want to disable that, you must set this to nil before
 ;;; Variables
 
 (defvar sisyphus-non-release-bump-header nil
-  "Whether to bump the `Package-Version' header for non-releases.
+  "Whether to bump the `Version'/`Package-Version' header for non-releases.
 
-MELPA prefers release tags over the `Package-Version' library
-header, and for packages that are only distributed on MELPA, I
-strongly recommend that you do not add this header at all.
+MELPA prefers release tags over the versions specified using the
+`Version' or `Package-Version' library header, and for packages
+that are only distributed on MELPA, I strongly recommend that you
+do not add this header at all.
 
 Elpa-Admin, the tool used to maintain GNU ELPA and NonGNU ELPA,
-relies exclusively on the `Package-Version' header, making it
-mandatory to set that header if a package is to be distributed
-there.
+relies exclusively on the version header, making it mandatory to
+set that header, if a package is to be distributed there.
 
 The functions, which Emacs uses to compare version strings, only
 support release and pre-release version strings.  Contrary to
 what you might expect, they, for example, consider \"1.0-git\" to
 be smaller than 1.0.  That makes it very difficult to bump the
-`Package-Version' after a release in order for it not to provide
+version header after a release in order for it not to provide
 incorrect information.
 
 As it stands, we are left with two unsatisfactory options to deal
-with the `Package-Version' header after a release.
+with the version header after a release.
 
 1) We leave the header untouched until the next release.  This is
    very unfortunate because it means that every commit in between
@@ -114,38 +114,59 @@ with the `Package-Version' header after a release.
    is not a release\" suffix for just another release.
 
    Because N-git is considered to be smaller than N, we have to
-   additionally inject a numeric part in between the release N and
-   the suffix.  Unlike N-git, N.50-git is greater than N.  Note
-   that N.0-git would not work because N.0 is equal to N, so
-   N.0-git too is smaller than N.
+   additionally either inject a numeric part in between the release
+   N and the suffix to fake post-release syntax, or bump N as well.
 
-   Having to use such a noisy suffix is bad enough, but
-   unfortunately Elpa-Admin then turns it into something even
-   uglier.  \"1.2.3.50-git\", for example, becomes something like
-   \"1.2.3.50-snapshot0.20230813.123456\".
+   a) Faking post-release syntax: Unlike N-git, N.50-git is greater
+      than N.  Note that N.0-git would not work because N.0 is equal
+      to N, so N.0-git too is smaller than N.
+
+      Having to use such a noisy suffix is bad enough, but
+      unfortunately Elpa-Admin then turns it into something even
+      uglier.  \"1.2.3.50-git\", for example, becomes something like
+      \"1.2.3.50-snapshot0.20230813.123456\".
+
+      To use this approach you have to set two variables:
+
+         (setq sisyphus-non-release-bump-header t)
+         (setq sisyphus-non-release-suffix \".50-git\")
+
+   b) Bumping version strings after release:  Given a release \"1.2.3\",
+      bump the least significant part before appending a pre-release
+      suffix: \"1.2.3-git\".
+
+      It is important that you always bump the least significant part.
+      If you bump another part, for example to \"1.3.0-git\", then you
+      cannot later decide to release \"1.2.4\", without all snapshot
+      releases that were previously labeled \"1.3.0-git...\" to be
+      considerd larger than the \"1.2.4\" release that follows them.
+
+      To use this approach you have to set two variables:
+
+         (setq sisyphus-non-release-bump-header t)
+         (setq sisyphus-non-release-suffix \"-git\")
+
+      Beside appending the specified suffix, this automatically bumps
+      the least significant part of the version string of the
+      preceeding release.
 
 A package may embbed version strings in other places beside the
-`Package-Version', in manuals, for example.  I recommend that
-you add a post-release suffix to these version strings after a
-release.  Because these version strings are not used by Emacs,
-we can ignore that Emacs does not support post-release version
-strings.
+version header, in manuals, for example.  I recommend that you add a
+post-release suffix to these version strings after a release.  Because
+these version strings are not used by Emacs, we can ignore that Emacs
+does not support post- release version strings.
 
-The default suffix, specified by `sisyphus-non-release-suffix',
-is \"-devel\", which was chosen over, e.g., \"-git\", because Emacs
-does not recognize the former at all, while it would considers the
-latter to be a pre-release suffix.
-
-Given the default values of `sisyphus-non-release-suffix' and
-this variable, the command `sisyphus-bump-post-release' bumps
-all embedded version strings by appending \"-devel\", except for
-the `Package-Version' header, which it leaves untouched.")
+Given the default values of `sisyphus-non-release-suffix' and this
+variable, the command `sisyphus-bump-post-release' bumps all embedded
+version strings by appending \"-devel\", except for the version in the
+version library header, which it leaves untouched.")
 
 (defvar sisyphus-non-release-suffix "-devel"
   "String appended to version strings for non-release revisions.
 Depending on the value of `sisyphus-non-release-bump-header'
 \(which see), this suffix is appended to all embedded version
-strings, or to all except for the `Package-Version' header.")
+strings, or to all except for the `Version'/`Package-Version'
+header.")
 
 (defvar sisyphus-changelog-file "CHANGELOG"
   "The file that contains the changelog.")
