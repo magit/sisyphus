@@ -210,7 +210,8 @@ With prefix argument NOCOMMIT, do not create a commit."
           (magit--disable-save-buffers t))
       (sisyphus--bump-changelog version)
       (sisyphus--bump-version version))
-    (unless nocommit
+    (if nocommit
+        (magit-refresh)
       (sisyphus--commit (format "Release version %s" version) t))))
 
 ;;;###autoload
@@ -231,7 +232,8 @@ With prefix argument NOCOMMIT, do not create a commit."
           (magit--disable-save-buffers t))
       (sisyphus--bump-changelog version t)
       (sisyphus--bump-version (sisyphus--previous-version) t))
-    (unless nocommit
+    (if nocommit
+        (magit-refresh)
       (sisyphus--commit "Resume development"))))
 
 ;;;###autoload
@@ -243,7 +245,8 @@ With prefix argument NOCOMMIT, do not create a commit."
     (let ((magit-inhibit-refresh t)
           (magit--disable-save-buffers t))
       (sisyphus--bump-copyright))
-    (unless nocommit
+    (if nocommit
+        (magit-refresh)
       (sisyphus--commit "Bump copyright years" nil t))))
 
 ;;; Macros
