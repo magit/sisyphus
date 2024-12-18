@@ -302,7 +302,8 @@ With prefix argument NOCOMMIT, do not create a commit."
     version))
 
 (defun sisyphus--bump-changelog (version &optional stub)
-  (let ((file (expand-file-name sisyphus-changelog-file)))
+  (let ((file (expand-file-name sisyphus-changelog-file))
+        (err nil))
     (when (file-exists-p file)
       (sisyphus--with-file file
         (if (re-search-forward sisyphus-changelog-entry-regexp nil t)
@@ -316,7 +317,7 @@ With prefix argument NOCOMMIT, do not create a commit."
                 (sisyphus--bump-changelog-insert-heading version "UNRELEASED"))
                ((equal vers prev)
                 (sisyphus--bump-changelog-insert-heading version today)
-                (user-error "CHANGELOG entry missing; inserting stub"))
+                (setq err "CHANGELOG entry missing; inserting stub"))
                ((equal vers version)
                 (when (and (not (equal date today))
                            (match-beginning 2))
@@ -332,7 +333,10 @@ With prefix argument NOCOMMIT, do not create a commit."
                   (delete-region (match-beginning 0) (match-end 0)))
                 (sisyphus--bump-changelog-insert-heading version today))
                ((user-error "Abort"))))
-          (user-error "Unsupported CHANGELOG format"))))))
+          (user-error "Unsupported CHANGELOG format")))
+      (when err
+        (magit-refresh)
+        (user-error err)))))
 
 (defun sisyphus--bump-changelog-insert-heading (version date)
   (insert (format-spec sisyphus-changelog-heading-format
