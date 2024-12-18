@@ -206,8 +206,7 @@ The regexp specified here, must match the format specified by
 With prefix argument NOCOMMIT, do not create a commit."
   (interactive (list (sisyphus--read-version)))
   (magit-with-toplevel
-    (let ((magit-inhibit-refresh t)
-          (magit--disable-save-buffers t))
+    (let ((magit-inhibit-refresh t))
       (sisyphus--bump-changelog version)
       (sisyphus--bump-version version))
     (if nocommit
@@ -228,8 +227,7 @@ With prefix argument NOCOMMIT, do not create a commit."
                 'sisyphus-non-release-suffix
                 sisyphus-non-release-suffix))
   (magit-with-toplevel
-    (let ((magit-inhibit-refresh t)
-          (magit--disable-save-buffers t))
+    (let ((magit-inhibit-refresh t))
       (sisyphus--bump-changelog version t)
       (sisyphus--bump-version (sisyphus--previous-version) t))
     (if nocommit
@@ -242,8 +240,7 @@ With prefix argument NOCOMMIT, do not create a commit."
 With prefix argument NOCOMMIT, do not create a commit."
   (interactive "P")
   (magit-with-toplevel
-    (let ((magit-inhibit-refresh t)
-          (magit--disable-save-buffers t))
+    (let ((magit-inhibit-refresh t))
       (sisyphus--bump-copyright))
     (if nocommit
         (magit-refresh)
@@ -460,6 +457,7 @@ With prefix argument NOCOMMIT, do not create a commit."
       (copyright-update))))
 
 (defun sisyphus--commit (msg &optional allow-empty no-edit)
+  (setq magit--disable-save-buffers t)
   (let ((magit-inhibit-refresh t))
     (magit-stage-1 "-u"))
   (magit-commit-create
