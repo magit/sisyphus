@@ -1,18 +1,18 @@
 ;;; sisyphus.el --- Create releases of Emacs packages  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2022-2024 Jonas Bernoulli
+;; Copyright (C) 2022-2025 Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <emacs.sisyphus@jonas.bernoulli.dev>
 ;; Homepage: https://github.com/magit/sisyphus
 ;; Keywords: git tools vc
 
-;; Package-Version: 0.2.0
+;; Package-Version: 0.2.1
 ;; Package-Requires: (
 ;;     (emacs "27.1")
-;;     (compat "30.0.0.0")
-;;     (elx "2.0.3")
-;;     (llama "0.3.1")
-;;     (magit "4.1.1"))
+;;     (compat "30.0.1.0")
+;;     (elx "2.0.4")
+;;     (llama "0.4.1")
+;;     (magit "4.2.0"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
