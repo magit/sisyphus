@@ -139,7 +139,7 @@ with the version header after a release.
       If you bump another part, for example to \"1.3.0-git\", then you
       cannot later decide to release \"1.2.4\", without all snapshot
       releases that were previously labeled \"1.3.0-git...\" to be
-      considerd larger than the \"1.2.4\" release that follows them.
+      considered larger than the \"1.2.4\" release that follows them.
 
       To use this approach you have to set two variables:
 
@@ -148,9 +148,9 @@ with the version header after a release.
 
       Beside appending the specified suffix, this automatically bumps
       the least significant part of the version string of the
-      preceeding release.
+      preceding release.
 
-A package may embbed version strings in other places beside the
+A package may embed version strings in other places beside the
 version header, in manuals, for example.  I recommend that you add a
 post-release suffix to these version strings after a release.  Because
 these version strings are not used by Emacs, we can ignore that Emacs
