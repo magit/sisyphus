@@ -323,7 +323,7 @@ With prefix argument NOCOMMIT, do not create a commit."
                            (match-beginning 2))
                   (replace-match today nil t nil 2)))
                ((y-or-n-p
-                 (format "%sCHANGELOG version is %s, change%s to %s"
+                 (format "%sCHANGELOG version is %s, change%s to %s?"
                          (if prev (format "Previous version is %s, " prev) "")
                          vers
                          (if prev " latter" "")
