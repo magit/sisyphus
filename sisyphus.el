@@ -193,7 +193,7 @@ Description of upcoming changes.
 Description of changes in v1.0.0.
 
 The regexp specified here, must match the format specified by
-`sisyphus-changelog-stub-format'.")
+`sisyphus-changelog-heading-format'.")
 
 (defvar sisyphus-changelog-heading-format "* v%-8v %d\n\n"
   "Format string used to insert changelog headings.")
