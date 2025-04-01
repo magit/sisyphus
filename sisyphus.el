@@ -9,10 +9,10 @@
 ;; Package-Version: 0.2.2
 ;; Package-Requires: (
 ;;     (emacs "27.1")
-;;     (compat "30.0.1.0")
-;;     (elx "2.0.4")
-;;     (llama "0.4.1")
-;;     (magit "4.2.0"))
+;;     (compat "30.0.2.0")
+;;     (elx "2.2.1")
+;;     (llama "0.6.2")
+;;     (magit "4.3.2"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
