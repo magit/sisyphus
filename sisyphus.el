@@ -6,13 +6,13 @@
 ;; Homepage: https://github.com/magit/sisyphus
 ;; Keywords: git tools vc
 
-;; Package-Version: 0.2.3
+;; Package-Version: 0.2.4
 ;; Package-Requires: (
 ;;     (emacs "27.1")
-;;     (compat "30.0.2.0")
-;;     (elx "2.2.1")
-;;     (llama "0.6.2")
-;;     (magit "4.3.2"))
+;;     (compat "30.1")
+;;     (elx "2.2.2")
+;;     (llama "0.6.3")
+;;     (magit "4.3.6"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
