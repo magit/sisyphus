@@ -405,7 +405,7 @@ With prefix argument NOCOMMIT, do not create a commit."
 
 (defun sisyphus--bump-version-lib (file version release updates)
   (sisyphus--with-file file
-    (when (lm-header "Package-Version")
+    (when (lm-header "\\(Package-\\)?Version")
       (delete-region (point) (line-end-position))
       ;; If we are creating a release, then `version' and `release'
       ;; are the same, so then this conditional makes no difference.
