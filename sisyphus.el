@@ -8,11 +8,11 @@
 
 ;; Package-Version: 0.2.5
 ;; Package-Requires: (
-;;     (emacs "27.1")
+;;     (emacs  "29.1")
 ;;     (compat "30.1")
-;;     (elx "2.2.2")
-;;     (llama "0.6.3")
-;;     (magit "4.3.6"))
+;;     (elx     "2.3")
+;;     (llama   "1.0")
+;;     (magit   "4.4"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
