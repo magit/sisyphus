@@ -364,11 +364,7 @@ With prefix argument NOCOMMIT, do not create a commit."
        (version (if post-release
                     (concat release sisyphus-non-release-suffix)
                   release))
-       (lib-updates (mapcar (lambda (lib)
-                              (list (intern
-                                     (file-name-sans-extension
-                                      (file-name-nondirectory lib)))
-                                    version))
+       (lib-updates (mapcar (##list (intern (file-name-base %)) version)
                             libs))
        (pkg-updates (if post-release
                         (let ((timestamp (format-time-string "%Y%m%d")))
@@ -413,8 +409,7 @@ With prefix argument NOCOMMIT, do not create a commit."
       (goto-char (point-min)))
     (when (re-search-forward
            (format "(defconst %s-version \"\\([^\"]+\\)\""
-                   (file-name-sans-extension
-                    (file-name-nondirectory file)))
+                   (file-name-base file))
            nil t)
       (replace-match version nil t nil 1)
       (goto-char (point-min)))
