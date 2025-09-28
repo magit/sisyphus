@@ -275,7 +275,7 @@ With prefix argument NOCOMMIT, do not create a commit."
     (and (file-exists-p file)
          (sisyphus--with-file file
            (and (re-search-forward sisyphus-changelog-entry-regexp nil t)
-                (match-string-no-properties 1))))))
+                (match-str 1))))))
 
 (defun sisyphus--read-version (&optional prompt)
   (let* ((prev (sisyphus--previous-version))
@@ -307,8 +307,8 @@ With prefix argument NOCOMMIT, do not create a commit."
     (when (file-exists-p file)
       (sisyphus--with-file file
         (if (re-search-forward sisyphus-changelog-entry-regexp nil t)
-            (let ((vers (match-string-no-properties 1))
-                  (date (match-string-no-properties 2))
+            (let ((vers (match-str 1))
+                  (date (match-str 2))
                   (prev (sisyphus--previous-version))
                   (today (format-time-string "%F")))
               (goto-char (line-beginning-position))
@@ -418,7 +418,7 @@ With prefix argument NOCOMMIT, do not create a commit."
       (let ((prev (sisyphus--previous-version)))
         (while (re-search-forward
                 ":package-version '([^ ]+ +\\. +\"\\([^\"]+\\)\")" nil t)
-          (let ((found (match-string-no-properties 1)))
+          (let ((found (match-str 1)))
             (when (and (magit--version> found prev)
                        (version< found version))
               (replace-match version nil t nil 1))))))
@@ -473,5 +473,8 @@ With prefix argument NOCOMMIT, do not create a commit."
 (provide 'sisyphus)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
+;; read-symbol-shorthands: (
+;;   ("match-string" . "match-string")
+;;   ("match-str"    . "match-string-no-properties"))
 ;; End:
 ;;; sisyphus.el ends here
