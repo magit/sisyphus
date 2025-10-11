@@ -8,11 +8,12 @@
 
 ;; Package-Version: 0.2.5
 ;; Package-Requires: (
-;;     (emacs  "29.1")
-;;     (compat "30.1")
-;;     (elx     "2.3")
-;;     (llama   "1.0")
-;;     (magit   "4.4"))
+;;     (emacs   "29.1")
+;;     (compat  "30.1")
+;;     (cond-let "0.1")
+;;     (elx      "2.3")
+;;     (llama    "1.0")
+;;     (magit    "4.4"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -36,6 +37,7 @@
 ;;; Code:
 
 (require 'compat)
+(require 'cond-let)
 (require 'llama)
 
 (require 'copyright)
@@ -463,8 +465,8 @@ With prefix argument NOCOMMIT, do not create a commit."
    (list "--edit" "--message" msg
          (and no-edit "--no-edit")
          (if (eq transient-current-command 'magit-tag)
-             (and-let* ((key (transient-arg-value
-                              "--local-user=" (transient-args 'magit-tag))))
+             (and-let ((key (transient-arg-value
+                             "--local-user=" (transient-args 'magit-tag))))
                (concat "--gpg-sign=" key))
            (transient-args 'magit-commit))
          (and allow-empty "--allow-empty"))))
@@ -474,6 +476,10 @@ With prefix argument NOCOMMIT, do not create a commit."
 ;; Local Variables:
 ;; indent-tabs-mode: nil
 ;; read-symbol-shorthands: (
+;;   ("and-let"      . "cond-let--and-let")
+;;   ("if-let"       . "cond-let--if-let")
+;;   ("when-let"     . "cond-let--when-let")
+;;   ("while-let"    . "cond-let--while-let")
 ;;   ("match-string" . "match-string")
 ;;   ("match-str"    . "match-string-no-properties"))
 ;; End:
