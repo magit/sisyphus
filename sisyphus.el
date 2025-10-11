@@ -8,7 +8,7 @@
 
 ;; Package-Version: 0.2.5
 ;; Package-Requires: (
-;;     (emacs   "29.1")
+;;     (emacs   "30.1")
 ;;     (compat  "30.1")
 ;;     (cond-let "0.1")
 ;;     (elx      "2.3")
@@ -216,6 +216,26 @@ The regexp specified here, must match the format specified by
 (defvar sisyphus-changelog-heading-format "* v%-8v %d\n\n"
   "Format string used to insert changelog headings.")
 
+(defvar sisyphus-bump-dependencies-function
+  #'sisyphus-default-bump-dependencies
+  "Function used to determine current versions of dependencies.
+
+This function is called with three arguments DEPS, VERSION and SIBLINGS.
+DEPS is the list of dependencies extracted from the Package-Requires
+header and has the form ((DEP VER ALIGNMENT)...).  This function must
+update each VER if appropriate, and return the updated list.  SIBLINGS
+is a list of packages maintained in the same directory.  VERSION is
+the version to be used for this package and its siblings.")
+
+(defvar sisyphus-sort-dependencies-function
+  #'sisyphus-default-sort-dependencies
+  "Function used to sort dependencies.
+
+This function is called with one argument ((NAME VERSION ALIGNMENT)...)
+and must return a list of the same form.  The default function sorts
+the dependencies alphabetically, except that \"emacs\" and \"compat\"
+are placed before other dependencies.")
+
 ;;; Commands
 
 ;;;###autoload
@@ -253,6 +273,18 @@ With prefix argument NOCOMMIT, do not create a commit."
       (sisyphus--commit "Resume development"))))
 
 ;;;###autoload
+(defun sisyphus-bump-package-requires ()
+  "Bump versions in the visited library's Package-Requires header."
+  (interactive)
+  (magit-with-toplevel
+    (let ((libs (sisyphus--list-libs)))
+      (unless (member (expand-file-name buffer-file-name) libs)
+        (user-error "Not visiting a library"))
+      (sisyphus--bump-package-requires
+       (sisyphus--previous-version)
+       (mapcar (##intern (file-name-base %)) libs)))))
+
+;;;###autoload
 (defun sisyphus-bump-copyright (&optional nocommit)
   "Bump copyright years and commit the result.
 With prefix argument NOCOMMIT, do not create a commit."
@@ -280,6 +312,28 @@ With prefix argument NOCOMMIT, do not create a commit."
 
 (defun sisyphus--package-name ()
   (file-name-nondirectory (directory-file-name (magit-toplevel))))
+
+(defun sisyphus--package-requires ()
+  (save-excursion
+    (let (deps beg end indent)
+      (pcase (prog1 (lm-header "Package-Requires")
+               (setq beg (point)))
+        ('nil)
+        ("("
+         (forward-line 1)
+         (while (looking-at "\
+^;;\\(\s\\{3,\\}\\)(\\([^\s]+\\)\\([\s]+\\)\"\\([^\"]+\\)\")")
+	   (push (list (intern (match-str 2)) (match-str 4) (match-str 3)) deps)
+           (setq indent (match-str 1))
+	   (forward-line 1))
+         (setq deps (nreverse deps))
+         (setq end (line-end-position 0)))
+        (_
+         (setq deps (read (current-buffer)))
+         (setq end (point))))
+      (and deps
+           (list (lm--prepare-package-dependencies deps)
+                 (1+ beg) (1- end) indent)))))
 
 (defun sisyphus--previous-version ()
   (caar (magit--list-releases)))
@@ -359,15 +413,16 @@ With prefix argument NOCOMMIT, do not create a commit."
 
 (defun sisyphus--bump-version (version &optional post-release)
   (let* ((libs (sisyphus--list-libs))
-         (orgs (sisyphus--list-orgs))
+         (siblings (mapcar (##intern (file-name-base %)) libs))
          (version (if post-release
                       (concat version sisyphus-non-release-suffix)
-                    version))
-         (updates (mapcar (##list (intern (file-name-base %)) version) libs)))
-    (mapc (##sisyphus--bump-version-lib % version updates) libs)
-    (mapc (##sisyphus--bump-version-org % version) orgs)))
+                    version)))
+    (dolist (lib libs)
+      (sisyphus--bump-version-lib lib version siblings))
+    (dolist (org (sisyphus--list-orgs))
+      (sisyphus--bump-version-org org version))))
 
-(defun sisyphus--bump-version-lib (file version updates)
+(defun sisyphus--bump-version-lib (file version siblings)
   (sisyphus--with-file file
     (when (lm-header "\\(Package-\\)?Version")
       (delete-region (point) (line-end-position))
@@ -383,7 +438,7 @@ With prefix argument NOCOMMIT, do not create a commit."
       (replace-match version nil t nil 1)
       (goto-char (point-min)))
     (unless (string-suffix-p "-git" version)
-      (elx-update-package-requires nil updates nil t)
+      (sisyphus--bump-package-requires version siblings)
       (let ((prev (sisyphus--previous-version)))
         (while (re-search-forward
                 ":package-version '([^ ]+ +\\. +\"\\([^\"]+\\)\")" nil t)
@@ -411,6 +466,23 @@ With prefix argument NOCOMMIT, do not create a commit."
     (when modified
       (magit-call-process "make" "texi"))))
 
+(defun sisyphus--bump-package-requires (version siblings)
+  (when-let ((deps (sisyphus--package-requires)))
+    (pcase-let*
+        ((`(,deps ,beg ,end ,indent) deps)
+         (deps (funcall sisyphus-bump-dependencies-function
+                        (funcall sisyphus-sort-dependencies-function deps)
+                        version siblings)))
+      (save-excursion
+        (goto-char beg)
+        (delete-region beg end)
+        (if indent
+            (pcase-dolist (`(,pkg ,version ,align) deps)
+              (insert (format "\n;;%s(%s%s\"%s\")" indent pkg align version)))
+          (insert (mapconcat (pcase-lambda (`(,pkg ,version))
+                               (format "(%s \"%s\")" pkg version))
+                             deps " ")))))))
+
 (defun sisyphus--bump-copyright ()
   (dolist (lib (sisyphus--list-libs))
     (sisyphus--bump-copyright-lib lib))
@@ -436,6 +508,39 @@ With prefix argument NOCOMMIT, do not create a commit."
                (concat "--gpg-sign=" key))
            (transient-args 'magit-commit))
          (and allow-empty "--allow-empty"))))
+
+(defun sisyphus-default-sort-dependencies (deps)
+  (sort deps
+        :lessp (lambda (a b)
+                 (pcase (list a b)
+                   (`(emacs  ,_) t)
+                   (`(,_  emacs) nil)
+                   (`(compat ,_) t)
+                   (`(,_ compat) nil)
+                   (_ (string< a b))))
+        :key #'car))
+
+(defun sisyphus-default-bump-dependencies (deps version siblings)
+  (mapcar (pcase-lambda (`(,pkg ,ver ,align))
+            (list pkg (if (memq pkg siblings) version ver) align))
+          deps))
+
+(defun sisyphus-tarsius-bump-dependencies (deps version siblings)
+  (mapcar (pcase-lambda (`(,pkg ,ver ,align))
+            (let* ((name  (symbol-name pkg))
+                   (ver   (version-to-list ver))
+                   (parts (length ver)))
+              (cond-let*
+                ((memq pkg '(emacs compat)))
+                ((memq pkg siblings)
+                 (setq ver (version-to-list version)))
+                ([default-directory (borg-worktree name)]
+                 [_(file-directory-p default-directory)]
+                 (setq ver (version-to-list (sisyphus--previous-version))))
+                ([builtin (alist-get (intern name) package--builtins)]
+                 (setq ver (aref builtin 0))))
+              (list pkg (package-version-join (seq-take ver parts)) align)))
+          deps))
 
 ;;; _
 (provide 'sisyphus)
