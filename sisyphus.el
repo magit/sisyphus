@@ -272,7 +272,7 @@ With prefix argument NOCOMMIT, do not create a commit."
 (defun sisyphus--previous-version ()
   (caar (magit--list-releases)))
 
-(defun sisyphus--get-changelog-version ()
+(defun sisyphus--changelog-version ()
   (let ((file (expand-file-name sisyphus-changelog-file)))
     (and (file-exists-p file)
          (sisyphus--with-file file
@@ -281,7 +281,7 @@ With prefix argument NOCOMMIT, do not create a commit."
 
 (defun sisyphus--read-version (&optional prompt)
   (let* ((prev (sisyphus--previous-version))
-         (next (sisyphus--get-changelog-version))
+         (next (sisyphus--changelog-version))
          (version (read-string
                    (if prev
                        (format "%s (previous was %s): "
