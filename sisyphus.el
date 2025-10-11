@@ -135,7 +135,7 @@ with the version header after a release.
 
    b) Bumping version strings after release:  Given a release \"1.2.3\",
       bump the least significant part before appending a pre-release
-      suffix: \"1.2.3-git\".
+      suffix: \"1.2.4-git\".
 
       It is important that you always bump the least significant part.
       If you bump another part, for example to \"1.3.0-git\", then you
@@ -156,7 +156,7 @@ A package may embed version strings in other places beside the
 version header, in manuals, for example.  I recommend that you add a
 post-release suffix to these version strings after a release.  Because
 these version strings are not used by Emacs, we can ignore that Emacs
-does not support post- release version strings.
+does not support post-release version strings.
 
 Given the default values of `sisyphus-non-release-suffix' and this
 variable, the command `sisyphus-bump-post-release' bumps all embedded
