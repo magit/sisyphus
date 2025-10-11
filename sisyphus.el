@@ -357,23 +357,24 @@ With prefix argument NOCOMMIT, do not create a commit."
                        `((?v . ,version)
                          (?d . ,date)))))
 
-(defun sisyphus--bump-version (release &optional post-release)
+(defun sisyphus--bump-version (version &optional post-release)
   (let* ((libs (sisyphus--list-libs))
          (orgs (sisyphus--list-orgs))
          (version (if post-release
-                      (concat release sisyphus-non-release-suffix)
-                    release))
+                      (concat version sisyphus-non-release-suffix)
+                    version))
          (updates (mapcar (##list (intern (file-name-base %)) version) libs)))
-    (mapc (##sisyphus--bump-version-lib % version release updates) libs)
+    (mapc (##sisyphus--bump-version-lib % version updates) libs)
     (mapc (##sisyphus--bump-version-org % version) orgs)))
 
-(defun sisyphus--bump-version-lib (file version release updates)
+(defun sisyphus--bump-version-lib (file version updates)
   (sisyphus--with-file file
     (when (lm-header "\\(Package-\\)?Version")
       (delete-region (point) (line-end-position))
-      ;; If we are creating a release, then `version' and `release'
-      ;; are the same, so then this conditional makes no difference.
-      (insert (if sisyphus-non-release-bump-header version release))
+      (insert (if (and (not sisyphus-non-release-bump-header)
+                       (string-suffix-p sisyphus-non-release-suffix version))
+                  (substring version 0 (- (length sisyphus-non-release-suffix)))
+                version))
       (goto-char (point-min)))
     (when (re-search-forward
            (format "(defconst %s-version \"\\([^\"]+\\)\""
