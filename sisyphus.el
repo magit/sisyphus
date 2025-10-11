@@ -389,8 +389,7 @@ With prefix argument NOCOMMIT, do not create a commit."
           (let ((found (match-str 1)))
             (when (and (magit--version> found prev)
                        (version< found version))
-              (replace-match version nil t nil 1))))))
-    (save-buffer)))
+              (replace-match version nil t nil 1))))))))
 
 (defun sisyphus--bump-version-org (file version)
   (let ((modified nil))
