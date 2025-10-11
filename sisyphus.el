@@ -44,6 +44,8 @@
 (require 'elx)
 (require 'magit-tag)
 
+(declare-function borg-worktree "ext:borg" (clone))
+
 ;;; Add Bindings
 
 ;;;###autoload
