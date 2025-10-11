@@ -266,6 +266,18 @@ With prefix argument NOCOMMIT, do not create a commit."
 
 ;;; Functions
 
+(defun sisyphus--list-libs ()
+  (seq-remove
+   (##string-match-p "\\(\\`\\.\\|-autoloads\\.el\\'\\|-pkg.el\\'\\)"
+                     (file-name-nondirectory %))
+   (directory-files (if (file-directory-p "lisp") "lisp" ".") t "\\.el\\'")))
+
+(defun sisyphus--list-orgs ()
+  (seq-remove
+   (##string-match-p "\\`\\(\\.\\|README.org\\'\\)"
+                     (file-name-nondirectory %))
+   (directory-files (if (file-directory-p "docs") "docs" ".") t "\\.org\\'")))
+
 (defun sisyphus--package-name ()
   (file-name-nondirectory (directory-file-name (magit-toplevel))))
 
@@ -345,60 +357,15 @@ With prefix argument NOCOMMIT, do not create a commit."
                        `((?v . ,version)
                          (?d . ,date)))))
 
-(defun sisyphus--list-files ()
-  (let* ((lisp (if (file-directory-p "lisp") "lisp" "."))
-         (docs (if (file-directory-p "docs") "docs" "."))
-         (pkgs (nconc (directory-files lisp t "-pkg\\.el\\'")
-                      (and (equal lisp "lisp")
-                           (directory-files "." t "-pkg\\.el\\'"))))
-         (libs (seq-remove (##string-match-p "\\(\\`\\.\\|-autoloads\\.el\\'\\)"
-                                             (file-name-nondirectory %))
-                           (seq-difference (directory-files lisp t "\\.el\\'")
-                                           pkgs)))
-         (orgs (cl-delete "README.org" (directory-files docs t "\\.org\\'")
-                          :test #'equal :key #'file-name-nondirectory)))
-    (list libs pkgs orgs)))
-
 (defun sisyphus--bump-version (release &optional post-release)
-  (pcase-let*
-      ((`(,libs ,pkgs ,orgs) (sisyphus--list-files))
-       (version (if post-release
-                    (concat release sisyphus-non-release-suffix)
-                  release))
-       (lib-updates (mapcar (##list (intern (file-name-base %)) version)
-                            libs))
-       (pkg-updates (if post-release
-                        (let ((timestamp (format-time-string "%Y%m%d")))
-                          (mapcar (pcase-lambda (`(,pkg ,_)) (list pkg timestamp))
-                                  lib-updates))
-                      lib-updates)))
-    (mapc (##sisyphus--bump-version-pkg % version pkg-updates) pkgs)
-    (mapc (##sisyphus--bump-version-lib % version release lib-updates) libs)
+  (let* ((libs (sisyphus--list-libs))
+         (orgs (sisyphus--list-orgs))
+         (version (if post-release
+                      (concat release sisyphus-non-release-suffix)
+                    release))
+         (updates (mapcar (##list (intern (file-name-base %)) version) libs)))
+    (mapc (##sisyphus--bump-version-lib % version release updates) libs)
     (mapc (##sisyphus--bump-version-org % version) orgs)))
-
-(defun sisyphus--bump-version-pkg (file version updates)
-  (sisyphus--with-file file
-    (pcase-let* ((`(,_ ,name ,_ ,docstring ,deps . ,props)
-                  (read (current-buffer)))
-                 (deps (cadr deps)))
-      (erase-buffer)
-      (insert (format "(define-package %S %S\n  %S\n  '("
-                      name version docstring))
-      (when deps
-        (setq deps (elx--update-dependencies deps updates))
-        (let ((format
-               (format "(%%-%is %%S)"
-                       (apply #'max
-                              (mapcar (##length (symbol-name (car %))) deps)))))
-          (while-let ((dep (pop deps)))
-            (indent-to 4)
-            (insert (format format (car dep) (cadr dep)))
-            (when deps (insert "\n")))))
-      (insert ")")
-      (while-let ((key (pop props))
-                  (val (pop props)))
-        (insert (format "\n  %s %S" key val)))
-      (insert ")\n"))))
 
 (defun sisyphus--bump-version-lib (file version release updates)
   (sisyphus--with-file file
@@ -445,10 +412,10 @@ With prefix argument NOCOMMIT, do not create a commit."
       (magit-call-process "make" "texi"))))
 
 (defun sisyphus--bump-copyright ()
-  (pcase-let ((`(,libs ,_ ,orgs) (sisyphus--list-files)))
-    (mapc (##sisyphus--bump-copyright-lib %) libs)
-    (when orgs
-      (magit-call-process "make" "clean" "texi" "all"))))
+  (dolist (lib (sisyphus--list-libs))
+    (sisyphus--bump-copyright-lib lib))
+  (when (sisyphus--list-orgs)
+    (magit-call-process "make" "clean" "texi" "all")))
 
 (defun sisyphus--bump-copyright-lib (file)
   (sisyphus--with-file file
