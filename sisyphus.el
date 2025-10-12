@@ -529,17 +529,16 @@ With prefix argument NOCOMMIT, do not create a commit."
 
 (defun sisyphus-tarsius-bump-dependencies (deps version siblings)
   (mapcar (pcase-lambda (`(,pkg ,ver ,align))
-            (let* ((name  (symbol-name pkg))
-                   (ver   (version-to-list ver))
+            (let* ((ver (version-to-list ver))
                    (parts (length ver)))
               (cond-let*
                 ((memq pkg '(emacs compat)))
                 ((memq pkg siblings)
                  (setq ver (version-to-list version)))
-                ([default-directory (borg-worktree name)]
+                ([default-directory (borg-worktree (symbol-name pkg))]
                  [_(file-directory-p default-directory)]
                  (setq ver (version-to-list (sisyphus--previous-version))))
-                ([builtin (alist-get (intern name) package--builtins)]
+                ([builtin (alist-get pkg package--builtins)]
                  (setq ver (aref builtin 0))))
               (list pkg (package-version-join (seq-take ver parts)) align)))
           deps))
