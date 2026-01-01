@@ -500,6 +500,9 @@ With prefix argument NOCOMMIT, do not create a commit."
                        (sisyphus--list-tests)))
     (sisyphus--bump-copyright-lib file))
   (when (sisyphus--list-orgs)
+    (let ((file (expand-file-name "docs/.orgconfig")))
+      (when (file-exists-p file)
+        (sisyphus--bump-copyright-lib file)))
     (magit-call-process "make" "texi")))
 
 (defun sisyphus--bump-copyright-lib (file)
