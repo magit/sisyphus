@@ -489,7 +489,7 @@ With prefix argument NOCOMMIT, do not create a commit."
   (dolist (lib (sisyphus--list-libs))
     (sisyphus--bump-copyright-lib lib))
   (when (sisyphus--list-orgs)
-    (magit-call-process "make" "clean" "texi" "all")))
+    (magit-call-process "make" "texi")))
 
 (defun sisyphus--bump-copyright-lib (file)
   (sisyphus--with-file file
