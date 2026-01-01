@@ -238,6 +238,18 @@ and must return a list of the same form.  The default function sorts
 the dependencies alphabetically, except that \"emacs\" and \"compat\"
 are placed before other dependencies.")
 
+;;;###autoload(put 'sisyphus-libraries 'safe-local-variable #'listp)
+(defvar-local sisyphus-libraries nil
+  "List of libraries in which copyright years are bumped.
+If nil, use the default set.  If t is a member of the list, also use
+the default set.")
+
+;;;###autoload(put 'sisyphus-org-manuals 'safe-local-variable #'listp)
+(defvar-local sisyphus-org-manuals nil
+  "List of manuals in Org format in which copyright years are bumped.
+If nil, use the default set.  If t is a member of the list, also use
+the default set.")
+
 ;;; Commands
 
 ;;;###autoload
@@ -301,10 +313,16 @@ With prefix argument NOCOMMIT, do not create a commit."
 ;;; Functions
 
 (defun sisyphus--list-libs ()
-  (seq-remove
-   (##string-match-p "\\(\\`\\.\\|-autoloads\\.el\\'\\|-pkg.el\\'\\)"
-                     (file-name-nondirectory %))
-   (directory-files (if (file-directory-p "lisp") "lisp" ".") t "\\.el\\'")))
+  (let ((files (seq-remove
+                (##string-match-p
+                 "\\(\\`\\.\\|-autoloads\\.el\\'\\|-pkg.el\\'\\)"
+                 (file-name-nondirectory %))
+                (directory-files
+                 (if (file-directory-p "lisp") "lisp" ".") t "\\.el\\'"))))
+    (cond ((not sisyphus-libraries) files)
+          ((memq t sisyphus-libraries)
+           (delq t (nconc files sisyphus-libraries)))
+          (sisyphus-libraries))))
 
 (defun sisyphus--list-tests ()
   (cond-let
@@ -317,10 +335,15 @@ With prefix argument NOCOMMIT, do not create a commit."
      (list file))))
 
 (defun sisyphus--list-orgs ()
-  (seq-remove
-   (##string-match-p "\\`\\(\\.\\|README.org\\'\\)"
-                     (file-name-nondirectory %))
-   (directory-files (if (file-directory-p "docs") "docs" ".") t "\\.org\\'")))
+  (let ((files (seq-remove
+                (##string-match-p "\\`\\(\\.\\|README.org\\'\\)"
+                                  (file-name-nondirectory %))
+                (directory-files
+                 (if (file-directory-p "docs") "docs" ".") t "\\.org\\'"))))
+    (cond ((not sisyphus-org-manuals) files)
+          ((memq t sisyphus-org-manuals)
+           (delq t (nconc files sisyphus-org-manuals)))
+          (sisyphus-org-manuals))))
 
 (defun sisyphus--package-name ()
   (file-name-nondirectory (directory-file-name (magit-toplevel))))
