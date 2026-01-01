@@ -306,6 +306,16 @@ With prefix argument NOCOMMIT, do not create a commit."
                      (file-name-nondirectory %))
    (directory-files (if (file-directory-p "lisp") "lisp" ".") t "\\.el\\'")))
 
+(defun sisyphus--list-tests ()
+  (cond-let
+    ((file-directory-p "test")
+     (directory-files "test" t "\\.el\\'"))
+    [[file (format "%s-tests.el"
+                   (file-name-nondirectory
+                    (directory-file-name default-directory)))]]
+    ((file-exists-p file)
+     (list file))))
+
 (defun sisyphus--list-orgs ()
   (seq-remove
    (##string-match-p "\\`\\(\\.\\|README.org\\'\\)"
@@ -486,8 +496,9 @@ With prefix argument NOCOMMIT, do not create a commit."
                              deps " ")))))))
 
 (defun sisyphus--bump-copyright ()
-  (dolist (lib (sisyphus--list-libs))
-    (sisyphus--bump-copyright-lib lib))
+  (dolist (file (nconc (sisyphus--list-libs)
+                       (sisyphus--list-tests)))
+    (sisyphus--bump-copyright-lib file))
   (when (sisyphus--list-orgs)
     (magit-call-process "make" "texi")))
 
