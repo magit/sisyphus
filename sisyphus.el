@@ -416,26 +416,26 @@ With prefix argument NOCOMMIT, do not create a commit."
                   (today (format-time-string "%F")))
               (goto-char (line-beginning-position))
               (cond
-               (stub
-                (sisyphus--bump-changelog-insert-heading version "UNRELEASED"))
-               ((equal vers prev)
-                (sisyphus--bump-changelog-insert-heading version today)
-                (setq err "CHANGELOG entry missing; inserting stub"))
-               ((equal vers version)
-                (when (and (not (equal date today))
-                           (match-beginning 2))
-                  (replace-match today nil t nil 2)))
-               ((y-or-n-p
-                 (format "%sCHANGELOG version is %s, change%s to %s?"
-                         (if prev (format "Previous version is %s, " prev) "")
-                         vers
-                         (if prev " latter" "")
-                         version))
-                (delete-region (point) (line-end-position))
-                (when (re-search-forward "\\=\n+" nil t)
-                  (delete-region (match-beginning 0) (match-end 0)))
-                (sisyphus--bump-changelog-insert-heading version today))
-               ((user-error "Abort"))))
+                (stub
+                 (sisyphus--bump-changelog-insert-heading version "UNRELEASED"))
+                ((equal vers prev)
+                 (sisyphus--bump-changelog-insert-heading version today)
+                 (setq err "CHANGELOG entry missing; inserting stub"))
+                ((equal vers version)
+                 (when (and (not (equal date today))
+                            (match-beginning 2))
+                   (replace-match today nil t nil 2)))
+                ((y-or-n-p
+                  (format "%sCHANGELOG version is %s, change%s to %s?"
+                          (if prev (format "Previous version is %s, " prev) "")
+                          vers
+                          (if prev " latter" "")
+                          version))
+                 (delete-region (point) (line-end-position))
+                 (when (re-search-forward "\\=\n+" nil t)
+                   (delete-region (match-beginning 0) (match-end 0)))
+                 (sisyphus--bump-changelog-insert-heading version today))
+                ((user-error "Abort"))))
           (user-error "Unsupported CHANGELOG format")))
       (when err
         (magit-refresh)
@@ -584,6 +584,9 @@ With prefix argument NOCOMMIT, do not create a commit."
 (provide 'sisyphus)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
+;; lisp-indent-local-overrides: (
+;;   (cond . 0)
+;;   (interactive . 0))
 ;; read-symbol-shorthands: (
 ;;   ("and-let"      . "cond-let--and-let")
 ;;   ("if-let"       . "cond-let--if-let")
