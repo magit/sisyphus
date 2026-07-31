@@ -59,13 +59,11 @@ If you want to disable that, you must set this to nil before
 (with-eval-after-load 'magit-tag
   (when sisyphus-add-default-bindings
 
-    (transient-insert-suffix 'magit-tag "r"
-      '("c" "release commit" sisyphus-create-release))
-
-    (transient-suffix-put 'magit-tag "r" :description "release tag")
-
     (transient-append-suffix 'magit-tag "r"
-      '("y" "bump copyright years" sisyphus-bump-copyright))))
+      '("e" "elisp release" sisyphus-create-release))
+
+    (transient-append-suffix 'magit-tag "p"
+      '("c" "bump copyright" sisyphus-bump-copyright))))
 
 ;;; Macros
 
@@ -153,8 +151,8 @@ the default set.")
 
 ;;;###autoload
 (defun sisyphus-create-release (version &optional nocommit)
-  "Create a release commit, bumping version strings.
-With prefix argument NOCOMMIT, do not create a commit."
+  "Create a release (commit and tag), bumping version strings.
+With prefix argument NOCOMMIT, only bump version strings."
   (interactive (list (sisyphus--read-version)))
   (magit-with-toplevel
     (let ((magit-inhibit-refresh t))
@@ -162,7 +160,15 @@ With prefix argument NOCOMMIT, do not create a commit."
       (sisyphus--bump-version version))
     (if nocommit
         (magit-refresh)
-      (sisyphus--commit (format "Release version %s" version) t))))
+      (let ((date (format-time-string "%F %T %z")))
+        (sisyphus--commit (format "Release version %s" version) date)
+        (sisyphus--tag (format "v%s" version)
+                       (format "%s %s"
+                               (capitalize
+                                (file-name-nondirectory
+                                 (directory-file-name (magit-toplevel))))
+                               version)
+                       date)))))
 
 ;;;###autoload
 (defun sisyphus-bump-package-requires ()
@@ -186,7 +192,7 @@ With prefix argument NOCOMMIT, do not create a commit."
       (sisyphus--bump-copyright))
     (if nocommit
         (magit-refresh)
-      (sisyphus--commit "Bump copyright years" nil t))))
+      (sisyphus--commit "Bump copyright years"))))
 
 ;;; Functions
 
@@ -405,19 +411,49 @@ With prefix argument NOCOMMIT, do not create a commit."
           (copyright-query nil))
       (copyright-update))))
 
-(defun sisyphus--commit (msg &optional allow-empty no-edit)
+(defun sisyphus--commit (msg &optional date)
   (setq magit--disable-save-buffers t)
   (let ((magit-inhibit-refresh t))
     (magit-stage-1 "-u"))
-  (magit-commit-create
-   (list "--edit" "--message" msg
-         (and no-edit "--no-edit")
-         (if (eq transient-current-command 'magit-tag)
-             (and-let ((key (transient-arg-value
-                             "--local-user=" (transient-args 'magit-tag))))
-               (concat "--gpg-sign=" key))
-           (transient-args 'magit-commit))
-         (and allow-empty "--allow-empty"))))
+  (let ((git (magit-git-executable))
+        (args (magit-process-git-arguments
+               (list "commit" "--edit" "-m" msg (sisyphus--sign-argument))
+               t))
+        (date (or date (format-time-string "%F %T %z"))))
+    (with-editor* "MAGIT_HOOK_EDITOR"
+      (with-environment-variables
+          ((magit-with-editor-envvar (getenv "MAGIT_HOOK_EDITOR")))
+        (let ((magit-process-popup-time -1)
+              (magit-inhibit-refresh t))
+          (if (executable-find "datefudge")
+              (apply #'magit-start-process "datefudge" nil
+                     (nconc (list "--static" date git) args))
+            (apply #'magit-start-process git nil args)))))))
+
+(defun sisyphus--tag (tag msg date)
+  (set-process-sentinel
+   magit-this-process
+   (lambda (process event)
+     (when (memq (process-status process) '(exit signal))
+       (magit-process-sentinel process event))
+     (when (eq (process-status process) 'exit)
+       (let ((git (magit-git-executable))
+             (args (magit-process-git-arguments
+                    (list "tag" "-s" (sisyphus--sign-argument t) "-m" msg tag)
+                    t)))
+         (if (executable-find "datefudge")
+             (apply #'magit-start-process "datefudge" nil
+                    (nconc (list "--static" date git) args))
+           (apply #'magit-start-process git nil args)))))))
+
+(defun sisyphus--sign-argument (&optional tagging)
+  (and-let* ((args (transient-args
+                    (cond ((eq transient-current-command 'magit-commit)
+                           '(magit-commit magit-tag))
+                          ('(magit-tag magit-commit)))))
+             (value (or (transient-arg-value "--gpg-sign=" args)
+                        (transient-arg-value "--local-user=" args))))
+    (concat (if tagging "--local-user=" "--gpg-sign=") value)))
 
 (defun sisyphus-default-sort-dependencies (deps)
   (sort deps
