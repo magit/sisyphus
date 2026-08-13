@@ -11,7 +11,6 @@
 ;;     (emacs   "30.1")
 ;;     (compat  "31.0")
 ;;     (cond-let "1.1")
-;;     (elx      "2.3")
 ;;     (llama    "1.0")
 ;;     (magit    "4.7"))
 
@@ -41,8 +40,8 @@
 (require 'llama)
 
 (require 'copyright)
-(require 'elx)
 (require 'magit-tag)
+(require 'package)
 
 (declare-function borg-worktree "ext:borg" (clone))
 
