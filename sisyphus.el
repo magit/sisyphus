@@ -40,6 +40,7 @@
 (require 'llama)
 
 (require 'copyright)
+(require 'lisp-mnt)
 (require 'magit-tag)
 (require 'package)
 
