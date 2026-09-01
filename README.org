@@ -25,5 +25,5 @@ of ~sisyphus-non-release-bump-header~ for more information.
 
 #+html: <br><br>
 #+html: <a href="https://github.com/magit/sisyphus/actions/workflows/compile.yml"><img alt="Compile" src="https://github.com/magit/sisyphus/actions/workflows/compile.yml/badge.svg"/></a>
-#+html: <a href="https://stable.melpa.org/#/sisyphus"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/sisyphus-badge.svg"/></a>
-#+html: <a href="https://melpa.org/#/sisyphus"><img alt="MELPA" src="https://melpa.org/packages/sisyphus-badge.svg"/></a>
+#+html: <a href="https://snapshots.melpa.org/#/sisyphus"><img alt="MELPA Snapshots" src="https://snapshots.melpa.org/packages/sisyphus-badge.svg"/></a>
+#+html: <a href="https://releases.melpa.org/#/sisyphus"><img alt="MELPA Releases" src="https://releases.melpa.org/packages/sisyphus-badge.svg"/></a>
