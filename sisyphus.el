@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/magit/sisyphus
 ;; Keywords: git tools vc
 
-;; Package-Version: 0.5.0
+;; Package-Version: 0.5.1
 ;; Package-Requires: (
 ;;     (emacs   "30.1")
 ;;     (compat  "31.0")
