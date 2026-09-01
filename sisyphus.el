@@ -413,7 +413,7 @@ With prefix argument NOCOMMIT, do not create a commit."
 (defun sisyphus--commit (msg &optional date)
   (setq magit--disable-save-buffers t)
   (let ((magit-inhibit-refresh t))
-    (magit-stage-1 "-u"))
+    (magit-stage-1 "--all"))
   (let ((git (magit-git-executable))
         (args (magit-process-git-arguments
                (list "commit" "--edit" "-m" msg (sisyphus--sign-argument))
