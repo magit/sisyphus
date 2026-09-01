@@ -435,7 +435,8 @@ With prefix argument NOCOMMIT, do not create a commit."
    (lambda (process event)
      (when (memq (process-status process) '(exit signal))
        (magit-process-sentinel process event))
-     (when (eq (process-status process) 'exit)
+     (when (and (eq (process-status process) 'exit)
+                (eq (process-exit-status process) 0))
        (let ((git (magit-git-executable))
              (args (magit-process-git-arguments
                     (list "tag" "-s" (sisyphus--sign-argument t) "-m" msg tag)
