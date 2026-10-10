@@ -176,7 +176,8 @@ With prefix argument NOCOMMIT, only bump version strings."
   (interactive)
   (magit-with-toplevel
     (let ((libs (sisyphus--list-libs)))
-      (unless (member (expand-file-name buffer-file-name) libs)
+      (unless (and buffer-file-name
+                   (member (expand-file-name buffer-file-name) libs))
         (user-error "Not visiting a library"))
       (sisyphus--bump-package-requires
        (sisyphus--previous-version)
