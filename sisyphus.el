@@ -105,17 +105,21 @@ The format specified here, must match the regexp specified by
   :type 'string)
 
 (defcustom sisyphus-bump-dependencies-function
-  #'sisyphus-default-bump-dependencies
+  #'sisyphus-elpa-bump-dependencies
   "Function used to determine current versions of dependencies.
 
 This function is called with three arguments DEPS, VERSION and SIBLINGS.
 DEPS is the list of dependencies extracted from the Package-Requires
 header and has the form ((DEP VER ALIGNMENT)...).  This function must
 update each VER if appropriate, and return the updated list.  SIBLINGS
-is a list of packages maintained in the same directory.  VERSION is
+is a list of packages maintained in the same repository.  VERSION is
 the version to be used for this package and its siblings."
-  :safe (##memq % '(sisyphus-default-bump-dependencies))
-  :type '(choice (function-item sisyphus-default-bump-dependencies)
+  :safe (##memq % '(sisyphus-self-bump-dependencies
+                    sisyphus-elpa-bump-dependencies
+                    sisyphus-borg-bump-dependencies))
+  :type '(choice (function-item sisyphus-self-bump-dependencies)
+                 (function-item sisyphus-elpa-bump-dependencies)
+                 (function-item sisyphus-borg-bump-dependencies)
                  function))
 
 (defcustom sisyphus-sort-dependencies-function
@@ -477,12 +481,40 @@ With prefix argument NOCOMMIT, do not create a commit."
                    (_ (string< a b))))
         :key #'car))
 
-(defun sisyphus-default-bump-dependencies (deps version siblings)
+(defun sisyphus-self-bump-dependencies (deps version siblings)
+  "Return DEPS mostly unchanged, except use VERSION for SIBLINGS."
   (mapcar (pcase-lambda (`(,pkg ,ver ,align))
             (list pkg (if (memq pkg siblings) version ver) align))
           deps))
 
-(defun sisyphus-tarsius-bump-dependencies (deps version siblings)
+(defun sisyphus-elpa-bump-dependencies (deps version siblings)
+  "Return DEPS using the latest versions according to `package-get-descriptor'.
+
+You must make sure the ELPA database is up-to-date, and should avoid
+channels that distribute snapshots.  If you update a dependency and then
+immediately the dependent, a third-party ELPA won't immediately become
+aware, so you might want to (maybe just) temporarily use a local ELPA,
+which you can update yourself right after creating a new release.  Use
+the `package-build' package to do so.  This is easy to do as described
+at https://codeberg.org/tarsius/myELPA.  Note that you do not have to
+publish your ELPA and that you can point recipes at local repositories."
+  (mapcar (pcase-lambda (`(,pkg ,ver ,align))
+            (let* ((ver (version-to-list ver))
+                   (parts (length ver)))
+              (cond-let*
+                ((eq pkg 'emacs))
+                ((memq pkg siblings)
+                 (setq ver (version-to-list version)))
+                ([desc (package-get-descriptor pkg t)]
+                 (setq ver (package-desc-version desc)))
+                ([builtin (alist-get pkg package--builtins)]
+                 (setq ver (aref builtin 0))))
+              (list pkg (package-version-join (seq-take ver parts)) align)))
+          deps))
+
+(defun sisyphus-borg-bump-dependencies (deps version siblings)
+  "Return DEPS using the latest versions installed using Borg.
+Learn about Borg at https://github.com/emacscollective/borg."
   (mapcar (pcase-lambda (`(,pkg ,ver ,align))
             (let* ((ver (version-to-list ver))
                    (parts (length ver)))
