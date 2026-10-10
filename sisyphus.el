@@ -65,22 +65,6 @@ If you want to disable that, you must set this to nil before
     (transient-append-suffix 'magit-tag "p"
       '("c" "bump copyright" sisyphus-bump-copyright))))
 
-;;; Macros
-
-(defmacro sisyphus--with-file (file &rest body)
-  (declare (indent 1))
-  (let ((file* (gensym "file"))
-        (open* (gensym "open")))
-    `(let* ((,file* ,file)
-            (,open* (find-buffer-visiting ,file*)))
-       (with-current-buffer (find-file-noselect ,file*)
-         (save-excursion
-           (goto-char (point-min))
-           (prog1 (progn ,@body)
-             (save-buffer)
-             (unless ,open*
-               (kill-buffer))))))))
-
 ;;; Variables
 
 (defvar sisyphus-changelog-file "CHANGELOG"
@@ -196,6 +180,20 @@ With prefix argument NOCOMMIT, do not create a commit."
       (sisyphus--commit "Bump copyright years"))))
 
 ;;; Functions
+
+(defmacro sisyphus--with-file (file &rest body)
+  (declare (indent 1))
+  (let ((file* (gensym "file"))
+        (open* (gensym "open")))
+    `(let* ((,file* ,file)
+            (,open* (find-buffer-visiting ,file*)))
+       (with-current-buffer (find-file-noselect ,file*)
+         (save-excursion
+           (goto-char (point-min))
+           (prog1 (progn ,@body)
+             (save-buffer)
+             (unless ,open*
+               (kill-buffer))))))))
 
 (defun sisyphus--list-libs ()
   (let ((files (seq-remove
