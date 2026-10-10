@@ -46,31 +46,32 @@
 
 (declare-function borg-worktree "ext:borg" (clone))
 
-;;; Add Bindings
+;;; Options
 
-;;;###autoload
-(defvar sisyphus-add-default-bindings t
-  "Whether to add Sisyphus commands to the `magit-tag' menu.
+(defgroup sisyphus nil
+  "Create releases of Emacs packages."
+  :group 'maint)
 
-If you want to disable that, you must set this to nil before
-`magit-tag' is loaded (which happens when `magit' is loaded.")
+(defcustom sisyphus-add-default-bindings t
+  "Whether to add Sisyphus commands to the `magit-tag' menu."
+  :type 'boolean
+  :set (lambda (symbol value)
+         (cond (value
+                (transient-append-suffix 'magit-tag "r"
+                  '("e" "elisp release" sisyphus-create-release))
+                (transient-append-suffix 'magit-tag "p"
+                  '("c" "bump copyright" sisyphus-bump-copyright)))
+               (t
+                (transient-remove-suffix 'magit-tag 'sisyphus-create-release)
+                (transient-remove-suffix 'magit-tag 'sisyphus-bump-copyright)))
+         (set-default-toplevel-value symbol value)))
 
-;;;###autoload
-(with-eval-after-load 'magit-tag
-  (when sisyphus-add-default-bindings
+(defcustom sisyphus-changelog-file "CHANGELOG"
+  "The file that contains the changelog."
+  :safe 'stringp
+  :type 'file)
 
-    (transient-append-suffix 'magit-tag "r"
-      '("e" "elisp release" sisyphus-create-release))
-
-    (transient-append-suffix 'magit-tag "p"
-      '("c" "bump copyright" sisyphus-bump-copyright))))
-
-;;; Variables
-
-(defvar sisyphus-changelog-file "CHANGELOG"
-  "The file that contains the changelog.")
-
-(defvar sisyphus-changelog-heading-regexp "^\\* v\\([^ ]+\\) +\\(.+\\)$"
+(defcustom sisyphus-changelog-heading-regexp "^\\* v\\([^ ]+\\) +\\(.+\\)$"
   "Regexp used to match a changelog heading.
 
 The file is searched from the beginning.  I.e., it is assumed
@@ -92,14 +93,18 @@ Description of upcoming changes.
 Description of changes in v1.0.0.
 
 The regexp specified here, must match the format specified by
-`sisyphus-changelog-heading-format'.")
+`sisyphus-changelog-heading-format'."
+  :safe 'stringp
+  :type 'regexp)
 
-(defvar sisyphus-changelog-heading-format "* v%-8v %d\n\n"
+(defcustom sisyphus-changelog-heading-format "* v%-8v %d\n\n"
   "Format string used to insert changelog headings.
 The format specified here, must match the regexp specified by
-`sisyphus-changelog-heading-regexp'.")
+`sisyphus-changelog-heading-regexp'."
+  :safe 'stringp
+  :type 'string)
 
-(defvar sisyphus-bump-dependencies-function
+(defcustom sisyphus-bump-dependencies-function
   #'sisyphus-default-bump-dependencies
   "Function used to determine current versions of dependencies.
 
@@ -108,16 +113,22 @@ DEPS is the list of dependencies extracted from the Package-Requires
 header and has the form ((DEP VER ALIGNMENT)...).  This function must
 update each VER if appropriate, and return the updated list.  SIBLINGS
 is a list of packages maintained in the same directory.  VERSION is
-the version to be used for this package and its siblings.")
+the version to be used for this package and its siblings."
+  :safe (##memq % '(sisyphus-default-bump-dependencies))
+  :type '(choice (function-item sisyphus-default-bump-dependencies)
+                 function))
 
-(defvar sisyphus-sort-dependencies-function
+(defcustom sisyphus-sort-dependencies-function
   #'sisyphus-default-sort-dependencies
   "Function used to sort dependencies.
 
 This function is called with one argument ((NAME VERSION ALIGNMENT)...)
 and must return a list of the same form.  The default function sorts
 the dependencies alphabetically, except that \"emacs\" and \"compat\"
-are placed before other dependencies.")
+are placed before other dependencies."
+  :safe (##memq % '(sisyphus-default-sort-dependencies))
+  :type '(choice (function-item sisyphus-default-sort-dependencies)
+                 function))
 
 ;;;###autoload(put 'sisyphus-libraries 'safe-local-variable #'listp)
 (defvar-local sisyphus-libraries nil
