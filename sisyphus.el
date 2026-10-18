@@ -8,7 +8,7 @@
 
 ;; Package-Version: 0.5.2
 ;; Package-Requires: (
-;;     (emacs   "30.1")
+;;     (emacs   "31.1")
 ;;     (compat  "31.1")
 ;;     (cond-let "1.1")
 ;;     (llama    "1.0")
