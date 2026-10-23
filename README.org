@@ -1,27 +1,24 @@
 * Create releases of Emacs packages
 
-Create a release and watch it roll down the hill again.
+Create releases and watch them roll down the hill again.
 
-This package is fairly opinionated, but not all of those opinions
-are mine.
+This package adds three commmands to the ~magit-tag~ menu.
 
-That is, I don't think it is a good idea to put version strings in
-Elisp libraries, but because some of my packages are distributed on
-[Non]GNU Elpa, I have to do that anyway.  Please see the docstring
-of ~sisyphus-non-release-bump-header~ for more information.
+- ~sisyphus-bump-package-requires~ bumps the versions of dependencies
+  in the ~Package-Requires~ header of the visited library.
 
-*Typical workflow*
+- ~sisyphus-bump-copyright~ bumps the copyright years in libraries,
+  test files and manuals, and commits the result.
 
-- Update release notes.
-- Create a release commit using ~t c~ (~sisyphus-create-release~).
-- Create a release tag using ~t r~ (~magit-tag-release~).
-- Create post release commit using ~t g~ (~sisyphus-bump-post-release~).
+- ~sisyphus-bump-copyright~ reads the new version from the user and
+  bumps version strings in libraries, test files and manuals.  It
+  also performs the same tasks as the previous two commands.
 
-*Recommended setup*
-
-#+begin_src emacs-lisp
-  (with-eval-after-load 'magit (require 'sisyphus))
-#+end_src
+This package is opinionated, but it does provide several options, so
+it can be tuned to work for people other than me.  However, the focus
+was, and continues to be, to make my life easier, so it caters to my
+own packaging idiosyncrasies, and I do not intend to invest a lot of
+time, making it the right tool for everyone.
 
 #+html: <br><br>
 #+html: <a href="https://github.com/magit/sisyphus/actions/workflows/compile.yml"><img alt="Compile" src="https://github.com/magit/sisyphus/actions/workflows/compile.yml/badge.svg"/></a>

@@ -31,7 +31,26 @@
 
 ;;; Commentary:
 
-;; Create a release and watch it roll down the hill again.
+;; Create releases of Emacs packages and watch them roll down the hill
+;; again.
+
+;; This package adds three commmands to the `magit-tag' menu.
+
+;; `sisyphus-bump-package-requires' bumps the versions of dependencies
+;; in the ~Package-Requires~ header of the visited library.
+
+;; `sisyphus-bump-copyright' bumps the copyright years in libraries,
+;; test files and manuals, and commits the result.
+
+;; `sisyphus-bump-copyright' reads the new version from the user and
+;; bumps version strings in libraries, test files and manuals.  It
+;; also performs the same tasks as the previous two commands.
+
+;; This package is opinionated, but it does provide several options, so
+;; it can be tuned to work for people other than me.  However, the focus
+;; was, and continues to be, to make my life easier, so it caters to my
+;; own packaging idiosyncrasies, and I do not intend to invest a lot of
+;; time, making it the right tool for everyone.
 
 ;;; Code:
 
@@ -164,7 +183,27 @@ from the top directory, except \"README.org\".")
 ;;;###autoload
 (defun sisyphus-create-release (version &optional nocommit)
   "Create a release (commit and tag), bumping version strings.
-With prefix argument NOCOMMIT, only bump version strings."
+
+With a prefix argument NOCOMMIT, do not create a commit and a tag.
+
+Read the new version string from the user, showing the previous version
+for convenience.  If a changelog file is used and it contains an entry
+for an unreleased version, default to that.  If a changelog file exists
+but lacks the expected entry, add a stub and abort.
+
+Update the version string in libraries, test files, manuals authored in
+Org mode files, and the constant `PACKAGE-version'.
+
+Also bump dependencies as for `sisyphus-bump-package-requires'.
+
+Initiate a commit, allowing the user to confirm the changes and to
+change the commit message.  Once they confirm create the commit and an
+annotated tag.
+
+The variables `sisyphus-changelog-file', `sisyphus-libraries' and
+`sisyphus-manuals' give some control over which files are modified.
+If this is not enough, consider advising `sisyphus-list-libraries',
+`sisyphus-list-tests' and/or `sisyphus-list-manuals'."
   (interactive (list (sisyphus--read-version)))
   (magit-with-toplevel
     (let ((magit-inhibit-refresh t))
@@ -180,7 +219,14 @@ With prefix argument NOCOMMIT, only bump version strings."
 
 ;;;###autoload
 (defun sisyphus-bump-package-requires ()
-  "Bump versions in the visited library's Package-Requires header."
+  "Bump versions in the visited library's Package-Requires header.
+
+Option `sisyphus-bump-dependencies-function' controls how these versions
+are determined, and option `sisyphus-sort-dependencies-function' controls
+ordering.
+
+Preserve the format of the header, including whether it is split across
+multiple lines and the alignment of the version strings, if any."
   (interactive)
   (magit-with-toplevel
     (let ((libs (sisyphus-list-libraries)))
