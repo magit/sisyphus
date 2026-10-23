@@ -206,6 +206,8 @@ With prefix argument NOCOMMIT, do not create a commit."
 ;;; Functions
 
 (defmacro sisyphus--with-file (file &rest body)
+  "Visit FILE in a buffer, evaluate BODY, and save and kill the buffer.
+If FILE was already being visited in an existing buffer, do not kill it."
   (declare (indent 1))
   (let ((file* (gensym "file"))
         (open* (gensym "open")))
@@ -464,6 +466,7 @@ this function."
       (copyright-update))))
 
 (defun sisyphus--commit (msg &optional date)
+  "Create a commit with MSG on DATE or now."
   (setq magit--disable-save-buffers t)
   (let ((magit-inhibit-refresh t))
     (magit-stage-1 "--all"))
@@ -483,6 +486,7 @@ this function."
             (apply #'magit-start-process git nil args)))))))
 
 (defun sisyphus--tag (tag msg date)
+  "Create an annotated tag named TAG with MSG on DATE."
   (set-process-sentinel
    magit-this-process
    (lambda (process event)
@@ -500,6 +504,11 @@ this function."
            (apply #'magit-start-process git nil args)))))))
 
 (defun sisyphus--sign-argument (&optional tagging)
+  "Return the argument necessary for signing, or nil.
+IF TAGGING is non-nil, return the argument necessary when tagging,
+else when committing.  Determine whether to return that argument
+or nil, depending on whether it is enabled in the respective Magit
+menu, `magit-tag' or `magit-commit'."
   (and-let* ((args (transient-args
                     (cond ((eq transient-current-command 'magit-commit)
                            '(magit-commit magit-tag))
