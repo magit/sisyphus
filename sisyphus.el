@@ -485,6 +485,7 @@ this function."
     (concat (if tagging "--local-user=" "--gpg-sign=") value)))
 
 (defun sisyphus-default-sort-dependencies (deps)
+  "Sort DEPS alphabetically, except place \"emacs\" and \"compat\" first."
   (sort deps
         :lessp (lambda (a b)
                  (pcase (list a b)
