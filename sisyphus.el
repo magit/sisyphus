@@ -220,6 +220,14 @@ With prefix argument NOCOMMIT, do not create a commit."
                (kill-buffer))))))))
 
 (defun sisyphus-list-libraries ()
+  "Return a list of libraries.
+
+If the directory \"lisp/\" exists, return Elisp files found in it.
+Otherwise return libraries found in the top directory.  Exclude files
+whose names end in \"-pkg.el\", \"tests.el\" or \"-autoloads.el\".
+
+If `sisyphus-libraries' is non-nil, return that instead.  If the
+value contains t, expand that to the default set described above."
   (let ((files (seq-remove
                 (##or (string-suffix-p "-pkg.el" %)
                       (string-suffix-p "-tests.el" %)
@@ -232,6 +240,14 @@ With prefix argument NOCOMMIT, do not create a commit."
           (sisyphus-libraries))))
 
 (defun sisyphus-list-tests ()
+  "Return a list of test files.
+
+If the directory \"test/\" exists, return Elisp files found in it.
+Otherwise if the file \"NAME-tests.el\" exists in the top directory,
+return a list consisting of just that file.  Otherwise return nil.
+
+If `sisyphus-tests' is non-nil, return that instead.  If the
+value contains t, expand that to the default set described above."
   (let ((files (cond-let
                  ((file-directory-p "test")
                   (directory-files "test" t "\\.el\\'"))
@@ -244,6 +260,14 @@ With prefix argument NOCOMMIT, do not create a commit."
           (sisyphus-tests))))
 
 (defun sisyphus-list-manuals ()
+  "Return a list of manuals.
+
+If the directory \"docs/\" exists, return Org mode files found in it.
+Otherwise return Org mode files found in the top directory, excluding
+\"README.org\".
+
+If `sisyphus-manuals' is non-nil, return that instead.  If the
+value contains t, expand that to the default set described above."
   (let ((files (if (file-directory-p "docs")
                    (directory-files "docs" t "\\.org\\'")
                  (seq-remove (##equal (file-name-nondirectory %) "README.org")
