@@ -136,13 +136,14 @@ are placed before other dependencies."
 
 ;;;###autoload(put 'sisyphus-libraries 'safe-local-variable #'listp)
 (defvar-local sisyphus-libraries nil
-  "List of libraries in which copyright years are bumped.
+  "List of libraries to be modified by Sisyphus commands.
+
 If nil, use the default set.  If t is a member of the list, also use
 the default set.")
 
 ;;;###autoload(put 'sisyphus-manuals 'safe-local-variable #'listp)
 (defvar-local sisyphus-manuals nil
-  "List of manuals in Org format in which copyright years are bumped.
+  "List of manuals in Org format to be modified by Sisyphus commands.
 
 If nil, use the default set.  If t is a member of the list, also use
 the default set.
