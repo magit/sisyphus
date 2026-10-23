@@ -174,12 +174,8 @@ With prefix argument NOCOMMIT, only bump version strings."
         (magit-refresh)
       (let ((date (format-time-string "%F %T %z")))
         (sisyphus--commit (format "Release version %s" version) date)
-        (sisyphus--tag (format "v%s" version)
-                       (format "%s %s"
-                               (capitalize
-                                (file-name-nondirectory
-                                 (directory-file-name (magit-toplevel))))
-                               version)
+        (sisyphus--tag (concat "v" version)
+                       (concat (capitalize (sisyphus-package-name)) " " version)
                        date)))))
 
 ;;;###autoload
@@ -239,9 +235,7 @@ With prefix argument NOCOMMIT, do not create a commit."
   (let ((files (cond-let
                  ((file-directory-p "test")
                   (directory-files "test" t "\\.el\\'"))
-                 [[file (format "%s-tests.el"
-                                (file-name-nondirectory
-                                 (directory-file-name default-directory)))]]
+                 [[file (concat (sisyphus-package-name) "-tests.el")]]
                  ((file-exists-p file)
                   (list file)))))
     (cond ((not sisyphus-tests) files)
@@ -259,7 +253,11 @@ With prefix argument NOCOMMIT, do not create a commit."
            (delq t (nconc files sisyphus-manuals)))
           (sisyphus-manuals))))
 
-(defun sisyphus--package-name ()
+(defun sisyphus-package-name ()
+  "Return the name of the current package.
+This assumes that the name of the repository matches that of the
+package.  If that isn't the case, then add an override advise for
+this function."
   (file-name-nondirectory (directory-file-name (magit-toplevel))))
 
 (defun sisyphus--package-requires ()
