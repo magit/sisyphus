@@ -140,8 +140,8 @@ are placed before other dependencies."
 If nil, use the default set.  If t is a member of the list, also use
 the default set.")
 
-;;;###autoload(put 'sisyphus-org-manuals 'safe-local-variable #'listp)
-(defvar-local sisyphus-org-manuals nil
+;;;###autoload(put 'sisyphus-manuals 'safe-local-variable #'listp)
+(defvar-local sisyphus-manuals nil
   "List of manuals in Org format in which copyright years are bumped.
 If nil, use the default set.  If t is a member of the list, also use
 the default set.")
@@ -174,7 +174,7 @@ With prefix argument NOCOMMIT, only bump version strings."
   "Bump versions in the visited library's Package-Requires header."
   (interactive)
   (magit-with-toplevel
-    (let ((libs (sisyphus--list-libs)))
+    (let ((libs (sisyphus-list-libraries)))
       (unless (and buffer-file-name
                    (member (expand-file-name buffer-file-name) libs))
         (user-error "Not visiting a library"))
@@ -210,7 +210,7 @@ With prefix argument NOCOMMIT, do not create a commit."
              (unless ,open*
                (kill-buffer))))))))
 
-(defun sisyphus--list-libs ()
+(defun sisyphus-list-libraries ()
   (let ((files (seq-remove
                 (##string-match-p
                  "\\(\\`\\.\\|-autoloads\\.el\\'\\|-pkg.el\\'\\)"
@@ -222,7 +222,7 @@ With prefix argument NOCOMMIT, do not create a commit."
            (delq t (nconc files sisyphus-libraries)))
           (sisyphus-libraries))))
 
-(defun sisyphus--list-tests ()
+(defun sisyphus-list-tests ()
   (cond-let
     ((file-directory-p "test")
      (directory-files "test" t "\\.el\\'"))
@@ -232,16 +232,16 @@ With prefix argument NOCOMMIT, do not create a commit."
     ((file-exists-p file)
      (list file))))
 
-(defun sisyphus--list-orgs ()
+(defun sisyphus-list-manuals ()
   (let ((files (seq-remove
                 (##string-match-p "\\`\\(\\.\\|README.org\\'\\)"
                                   (file-name-nondirectory %))
                 (directory-files
                  (if (file-directory-p "docs") "docs" ".") t "\\.org\\'"))))
-    (cond ((not sisyphus-org-manuals) files)
-          ((memq t sisyphus-org-manuals)
-           (delq t (nconc files sisyphus-org-manuals)))
-          (sisyphus-org-manuals))))
+    (cond ((not sisyphus-manuals) files)
+          ((memq t sisyphus-manuals)
+           (delq t (nconc files sisyphus-manuals)))
+          (sisyphus-manuals))))
 
 (defun sisyphus--package-name ()
   (file-name-nondirectory (directory-file-name (magit-toplevel))))
@@ -345,11 +345,11 @@ With prefix argument NOCOMMIT, do not create a commit."
                          (?d . ,date)))))
 
 (defun sisyphus--bump-version (version)
-  (let* ((libs (sisyphus--list-libs))
+  (let* ((libs (sisyphus-list-libraries))
          (siblings (mapcar (##intern (file-name-base %)) libs)))
     (dolist (lib libs)
       (sisyphus--bump-version-lib lib version siblings))
-    (dolist (org (sisyphus--list-orgs))
+    (dolist (org (sisyphus-list-manuals))
       (sisyphus--bump-version-org org version))))
 
 (defun sisyphus--bump-version-lib (file version siblings)
@@ -410,10 +410,10 @@ With prefix argument NOCOMMIT, do not create a commit."
                              deps " ")))))))
 
 (defun sisyphus--bump-copyright ()
-  (dolist (file (nconc (sisyphus--list-libs)
-                       (sisyphus--list-tests)))
+  (dolist (file (nconc (sisyphus-list-libraries)
+                       (sisyphus-list-tests)))
     (sisyphus--bump-copyright-file file))
-  (when (sisyphus--list-orgs)
+  (when (sisyphus-list-manuals)
     (let ((file (expand-file-name "docs/.orgconfig")))
       (when (file-exists-p file)
         (sisyphus--bump-copyright-file file)))
