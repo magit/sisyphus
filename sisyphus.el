@@ -218,6 +218,7 @@ With prefix argument NOCOMMIT, do not create a commit."
 (defun sisyphus-list-libraries ()
   (let ((files (seq-remove
                 (##or (string-suffix-p "-pkg.el" %)
+                      (string-suffix-p "-tests.el" %)
                       (string-suffix-p "-autoloads.el" %))
                 (directory-files
                  (if (file-directory-p "lisp") "lisp" ".") t "\\.el\\'"))))
