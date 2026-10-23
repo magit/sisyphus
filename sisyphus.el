@@ -511,7 +511,10 @@ aware, so you might want to (maybe just) temporarily use a local ELPA,
 which you can update yourself right after creating a new release.  Use
 the `package-build' package to do so.  This is easy to do as described
 at https://codeberg.org/tarsius/myELPA.  Note that you do not have to
-publish your ELPA and that you can point recipes at local repositories."
+publish your ELPA and that you can point recipes at local repositories.
+
+For each dependency use the same number of version string components,
+as were previously specified."
   (mapcar (pcase-lambda (`(,pkg ,ver ,align))
             (let* ((ver (version-to-list ver))
                    (parts (length ver)))
@@ -528,7 +531,11 @@ publish your ELPA and that you can point recipes at local repositories."
 
 (defun sisyphus-borg-bump-dependencies (deps version siblings)
   "Return DEPS using the latest versions installed using Borg.
-Learn about Borg at https://github.com/emacscollective/borg."
+
+Learn about Borg at https://github.com/emacscollective/borg.
+
+For each dependency use the same number of version string components,
+as were previously specified."
   (mapcar (pcase-lambda (`(,pkg ,ver ,align))
             (let* ((ver (version-to-list ver))
                    (parts (length ver)))
