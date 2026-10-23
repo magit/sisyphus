@@ -143,8 +143,13 @@ the default set.")
 ;;;###autoload(put 'sisyphus-manuals 'safe-local-variable #'listp)
 (defvar-local sisyphus-manuals nil
   "List of manuals in Org format in which copyright years are bumped.
+
 If nil, use the default set.  If t is a member of the list, also use
-the default set.")
+the default set.
+
+The default set consists of all files with suffix \".org\" from the
+\"docs/\" directory, if that directory exists, else all such files
+from the top directory, except \"README.org\".")
 
 ;;; Commands
 
@@ -233,11 +238,10 @@ With prefix argument NOCOMMIT, do not create a commit."
      (list file))))
 
 (defun sisyphus-list-manuals ()
-  (let ((files (seq-remove
-                (##string-match-p "\\`\\(\\.\\|README.org\\'\\)"
-                                  (file-name-nondirectory %))
-                (directory-files
-                 (if (file-directory-p "docs") "docs" ".") t "\\.org\\'"))))
+  (let ((files (if (file-directory-p "docs")
+                   (directory-files "docs" t "\\.org\\'")
+                 (seq-remove (##equal (file-name-nondirectory %) "README.org")
+                             (directory-files "." t "\\.org\\'")))))
     (cond ((not sisyphus-manuals) files)
           ((memq t sisyphus-manuals)
            (delq t (nconc files sisyphus-manuals)))
