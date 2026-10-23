@@ -141,6 +141,13 @@ are placed before other dependencies."
 If nil, use the default set.  If t is a member of the list, also use
 the default set.")
 
+;;;###autoload(put 'sisyphus-tests 'safe-local-variable #'listp)
+(defvar-local sisyphus-tests nil
+  "List of test files to be modified by Sisyphus commands.
+
+If nil, use the default set.  If t is a member of the list, also use
+the default set.")
+
 ;;;###autoload(put 'sisyphus-manuals 'safe-local-variable #'listp)
 (defvar-local sisyphus-manuals nil
   "List of manuals in Org format to be modified by Sisyphus commands.
@@ -229,14 +236,18 @@ With prefix argument NOCOMMIT, do not create a commit."
           (sisyphus-libraries))))
 
 (defun sisyphus-list-tests ()
-  (cond-let
-    ((file-directory-p "test")
-     (directory-files "test" t "\\.el\\'"))
-    [[file (format "%s-tests.el"
-                   (file-name-nondirectory
-                    (directory-file-name default-directory)))]]
-    ((file-exists-p file)
-     (list file))))
+  (let ((files (cond-let
+                 ((file-directory-p "test")
+                  (directory-files "test" t "\\.el\\'"))
+                 [[file (format "%s-tests.el"
+                                (file-name-nondirectory
+                                 (directory-file-name default-directory)))]]
+                 ((file-exists-p file)
+                  (list file)))))
+    (cond ((not sisyphus-tests) files)
+          ((memq t sisyphus-tests)
+           (delq t (nconc files sisyphus-tests)))
+          (sisyphus-tests))))
 
 (defun sisyphus-list-manuals ()
   (let ((files (if (file-directory-p "docs")
