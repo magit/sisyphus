@@ -544,10 +544,11 @@ this function."
              (args (magit-process-git-arguments
                     (list "tag" "-s" (sisyphus--sign-argument t) "-m" msg tag)
                     t)))
-         (if (executable-find "datefudge")
-             (apply #'magit-start-process "datefudge" nil
-                    (nconc (list "--static" date git) args))
-           (apply #'magit-start-process git nil args)))))))
+         (with-current-buffer (process-buffer process)
+           (if (executable-find "datefudge")
+               (apply #'magit-start-process "datefudge" nil
+                      (nconc (list "--static" date git) args))
+             (apply #'magit-start-process git nil args))))))))
 
 (defun sisyphus--sign-argument (&optional tagging)
   "Return the argument necessary for signing, or nil.
